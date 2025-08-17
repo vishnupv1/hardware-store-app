@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/providers/auth_provider.dart';
@@ -21,30 +20,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.neutral900 : AppColors.background,
-      appBar: AppBar(
-        title: Text('Profile'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
-        actions: [
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              return IconButton(
-                icon: Icon(Icons.logout),
-                onPressed: () async {
-                  await authProvider.logout();
-                  if (context.mounted) {
-                    context.go('/login');
-                  }
-                },
-              );
-            },
-          ),
-        ],
-      ),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
