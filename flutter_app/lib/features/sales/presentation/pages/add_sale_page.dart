@@ -349,7 +349,9 @@ class _AddSalePageState extends State<AddSalePage> {
       
       if (response['success']) {
         _showSuccessSnackBar('Sale created successfully');
-        context.go('/sales');
+        if (context.mounted) {
+          context.go('/sales');
+        }
       } else {
         _showErrorSnackBar(response['message'] ?? 'Failed to create sale');
       }

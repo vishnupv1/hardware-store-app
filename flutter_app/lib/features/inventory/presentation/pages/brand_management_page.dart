@@ -345,7 +345,7 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
           ElevatedButton(
             onPressed: _isAddingBrand ? null : () async {
               await _addBrand();
-              if (mounted && !_isAddingBrand) {
+              if (mounted && !_isAddingBrand && dialogContext.mounted) {
                 Navigator.of(dialogContext).pop();
               }
             },

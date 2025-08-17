@@ -929,7 +929,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         
         if (response['success']) {
           if (mounted) {
-            context.go('/inventory');
+            if (context.mounted) {
+              context.go('/inventory');
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Product deleted successfully!'),

@@ -547,15 +547,17 @@ class _SuppliersPageState extends State<SuppliersPage> {
                   if (!mounted) return;
 
                   if (response['success']) {
-                    Navigator.pop(dialogContext);
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
                     _loadSuppliers(refresh: true);
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Supplier created successfully')),
                       );
                     }
                   } else {
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(response['message'] ?? 'Failed to create supplier'),
@@ -565,7 +567,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
                     }
                   }
                 } catch (e) {
-                  if (mounted) {
+                  if (mounted && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Error creating supplier: $e'),
@@ -674,15 +676,17 @@ class _SuppliersPageState extends State<SuppliersPage> {
                   if (!mounted) return;
 
                   if (response['success']) {
-                    Navigator.pop(dialogContext);
+                    if (dialogContext.mounted) {
+                      Navigator.pop(dialogContext);
+                    }
                     _loadSuppliers(refresh: true);
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Supplier updated successfully')),
                       );
                     }
                   } else {
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(response['message'] ?? 'Failed to update supplier'),
@@ -692,7 +696,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
                     }
                   }
                 } catch (e) {
-                  if (mounted) {
+                  if (mounted && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Error updating supplier: $e'),

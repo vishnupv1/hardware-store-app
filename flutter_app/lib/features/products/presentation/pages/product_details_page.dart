@@ -204,7 +204,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               backgroundColor: Colors.green,
             ),
           );
-          context.go('/products');
+          if (context.mounted) {
+            context.go('/products');
+          }
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

@@ -177,7 +177,9 @@ class _ProductDetailsDialogState extends State<ProductDetailsDialog> {
             ),
           );
           widget.onProductDeleted();
-          Navigator.of(context).pop();
+          if (context.mounted) {
+            Navigator.of(context).pop();
+          }
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

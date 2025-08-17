@@ -610,7 +610,9 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
       if (!mounted) return;
 
       if (response['success']) {
-        Navigator.pop(context);
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

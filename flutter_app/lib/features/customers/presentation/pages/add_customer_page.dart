@@ -664,7 +664,9 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
 
       if (response['success']) {
         if (mounted) {
-          context.go('/customers');
+          if (context.mounted) {
+            context.go('/customers');
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Customer ${_nameController.text} added successfully!'),

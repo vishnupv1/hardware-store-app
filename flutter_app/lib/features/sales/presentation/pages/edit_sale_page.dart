@@ -369,7 +369,9 @@ class _EditSalePageState extends State<EditSalePage> {
       
       if (response['success']) {
         _showSuccessSnackBar('Sale updated successfully');
-        context.go('/sales/${widget.saleId}');
+        if (context.mounted) {
+          context.go('/sales/${widget.saleId}');
+        }
       } else {
         _showErrorSnackBar(response['message'] ?? 'Failed to update sale');
       }

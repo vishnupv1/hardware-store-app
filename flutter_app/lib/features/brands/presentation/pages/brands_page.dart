@@ -637,9 +637,11 @@ class _BrandsPageState extends State<BrandsPage> {
                   if (!mounted) return;
                   
                   if (response['success']) {
-                    Navigator.of(dialogContext).pop();
+                    if (dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop();
+                    }
                     _loadBrands(refresh: true);
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Brand added successfully!'),
@@ -648,7 +650,7 @@ class _BrandsPageState extends State<BrandsPage> {
                       );
                     }
                   } else {
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(response['message'] ?? 'Failed to add brand'),
@@ -658,7 +660,7 @@ class _BrandsPageState extends State<BrandsPage> {
                     }
                   }
                 } catch (e) {
-                  if (mounted) {
+                  if (mounted && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Error adding brand: $e'),
@@ -743,9 +745,11 @@ class _BrandsPageState extends State<BrandsPage> {
                   if (!mounted) return;
                   
                   if (response['success']) {
-                    Navigator.of(dialogContext).pop();
+                    if (dialogContext.mounted) {
+                      Navigator.of(dialogContext).pop();
+                    }
                     _loadBrands(refresh: true);
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Brand updated successfully!'),
@@ -754,7 +758,7 @@ class _BrandsPageState extends State<BrandsPage> {
                       );
                     }
                   } else {
-                    if (mounted) {
+                    if (mounted && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(response['message'] ?? 'Failed to update brand'),
@@ -764,7 +768,7 @@ class _BrandsPageState extends State<BrandsPage> {
                     }
                   }
                 } catch (e) {
-                  if (mounted) {
+                  if (mounted && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Error updating brand: $e'),

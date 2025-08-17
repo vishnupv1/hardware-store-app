@@ -124,7 +124,9 @@ class _AddProductPageState extends State<AddProductPage> {
             backgroundColor: Colors.green,
           ),
         );
-        context.go('/products');
+        if (context.mounted) {
+          context.go('/products');
+        }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

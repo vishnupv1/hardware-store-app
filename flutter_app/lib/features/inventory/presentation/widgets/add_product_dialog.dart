@@ -729,7 +729,9 @@ class _AddProductPageState extends State<AddProductPage> {
 
       if (response['success']) {
         if (mounted) {
-          context.go('/inventory');
+          if (context.mounted) {
+            context.go('/inventory');
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Product ${_nameController.text} added successfully!'),
