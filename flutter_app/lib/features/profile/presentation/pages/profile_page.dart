@@ -68,8 +68,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
-
   Widget _buildProfileHeader(ThemeData theme) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
@@ -90,13 +88,13 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary500.withOpacity(0.3),
+                color: AppColors.primary500.withValues(alpha: 0.3),
                 blurRadius: 25,
                 offset: const Offset(0, 8),
                 spreadRadius: 2,
               ),
               BoxShadow(
-                color: AppColors.primary500.withOpacity(0.1),
+                color: AppColors.primary500.withValues(alpha: 0.1),
                 blurRadius: 40,
                 offset: const Offset(0, 16),
                 spreadRadius: 4,
@@ -106,10 +104,10 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
+              color: Colors.white.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -132,20 +130,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     borderRadius: BorderRadius.circular(60),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary500.withOpacity(0.4),
+                        color: AppColors.primary500.withValues(alpha: 0.4),
                         blurRadius: 30,
                         offset: const Offset(0, 12),
                         spreadRadius: 2,
                       ),
                       BoxShadow(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         blurRadius: 20,
                         offset: const Offset(0, -8),
                         spreadRadius: 1,
                       ),
                     ],
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 3,
                     ),
                   ),
@@ -171,7 +169,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             border: Border.all(color: Colors.white, width: 2),
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.success500.withOpacity(0.3),
+                                color: AppColors.success500.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -235,7 +233,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.secondary500.withOpacity(0.3),
+                        color: AppColors.secondary500.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -279,7 +277,7 @@ class _ProfilePageState extends State<ProfilePage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -291,13 +289,13 @@ class _ProfilePageState extends State<ProfilePage> {
           Container(
             width: 1,
             height: 40,
-            color: theme.colorScheme.outline.withOpacity(0.2),
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
           ),
           Expanded(child: _buildStatItem(theme, 'Tasks', '34')),
           Container(
             width: 1,
             height: 40,
-            color: theme.colorScheme.outline.withOpacity(0.2),
+            color: theme.colorScheme.outline.withValues(alpha: 0.2),
           ),
           Expanded(child: _buildStatItem(theme, 'Hours', '156')),
         ],
@@ -366,11 +364,11 @@ class _ProfilePageState extends State<ProfilePage> {
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
+                          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
             ],
           ),
           child: Column(
@@ -392,7 +390,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _buildDetailItem(
                 theme,
                 'Phone',
-                user?.phoneNumber ?? 'Not provided',
+                user?.role == 'client' ? user?.contactPerson?.phoneNumber ?? 'Not provided' : user?.phoneNumber ?? 'Not provided',
                 Icons.phone_outlined,
               ),
               _buildDivider(theme),
@@ -461,7 +459,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary500.withOpacity(0.1),
+              color: AppColors.primary500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: AppColors.primary500, size: 20),
@@ -495,7 +493,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildDivider(ThemeData theme) {
     return Divider(
-      color: theme.colorScheme.outline.withOpacity(0.1),
+      color: theme.colorScheme.outline.withValues(alpha: 0.1),
       height: 1,
       indent: 56,
     );

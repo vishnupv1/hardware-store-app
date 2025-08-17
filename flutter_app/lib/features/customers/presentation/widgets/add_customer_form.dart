@@ -126,7 +126,7 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
@@ -150,7 +150,7 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
                 Text(
                   'Enter customer details below',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                                            color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -399,7 +399,7 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary500.withOpacity(0.1),
+                                  color: AppColors.primary500.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -506,7 +506,7 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
             color: AppColors.neutral50,
           ),
           child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             items: items,
             onChanged: onChanged,
             decoration: InputDecoration(
@@ -549,7 +549,7 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: AppColors.primary500,
+          activeThumbColor: AppColors.primary500,
         ),
       ],
     );
@@ -607,24 +607,34 @@ class _AddCustomerFormState extends State<AddCustomerForm> {
 
       final response = await apiService.createCustomer(customerData);
 
+      if (!mounted) return;
+
       if (response['success']) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Customer ${_nameController.text} added successfully!'),
-            backgroundColor: AppColors.success500,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Customer ${_nameController.text} added successfully!'),
+              backgroundColor: AppColors.success500,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       } else {
-        _showErrorSnackBar(response['message'] ?? 'Failed to add customer');
+        if (mounted) {
+          _showErrorSnackBar(response['message'] ?? 'Failed to add customer');
+        }
       }
     } catch (e) {
-      _showErrorSnackBar('An error occurred while adding customer');
+      if (mounted) {
+        _showErrorSnackBar('An error occurred while adding customer');
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

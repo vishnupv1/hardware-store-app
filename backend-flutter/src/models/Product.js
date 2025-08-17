@@ -19,18 +19,21 @@ const productSchema = new mongoose.Schema({
     maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
   category: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
     required: [true, 'Category is required'],
     trim: true,
     maxlength: [100, 'Category cannot exceed 100 characters']
   },
   subcategory: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subcategory',
     trim: true,
     maxlength: [100, 'Subcategory cannot exceed 100 characters']
   },
   brand: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Brand',
     trim: true,
     maxlength: [100, 'Brand cannot exceed 100 characters']
   },

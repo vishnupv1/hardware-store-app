@@ -141,7 +141,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               borderRadius: BorderRadius.circular(60),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary500.withOpacity(0.3),
+                  color: AppColors.primary500.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -156,7 +156,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
           const SizedBox(height: 16),
           TextButton.icon(
             onPressed: () {
-              // TODO: Implement image picker
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Image picker coming soon!'),

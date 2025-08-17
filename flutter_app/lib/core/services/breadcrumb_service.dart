@@ -76,7 +76,13 @@ class BreadcrumbService {
           ),
         ];
       
-
+      case '/brands':
+        return [
+          BreadcrumbItem(
+            label: 'Brands',
+            icon: Icons.branding_watermark,
+          ),
+        ];
       
       case '/profile':
         return [

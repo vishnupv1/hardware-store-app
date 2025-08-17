@@ -307,7 +307,7 @@ router.post('/client/login', authLimiter, validateLogin, async (req, res) => {
 
     // Find client and include password for comparison
     const client = await Client.findOne({ email }).select('+password');
-    console.log(client, 'client');
+
     if (!client) {
       return res.status(401).json({
         success: false,
@@ -375,7 +375,7 @@ router.post('/client/login', authLimiter, validateLogin, async (req, res) => {
       },
     };
 
-    console.log('Sending response:', JSON.stringify(responseData, null, 2));
+
     res.json(responseData);
   } catch (error) {
     console.error('Client login error:', error);

@@ -3,11 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
-import '../../../../shared/widgets/breadcrumb.dart';
-import '../../../../core/services/breadcrumb_service.dart';
 import '../../../../core/services/api_service.dart';
-import '../widgets/add_product_dialog.dart';
-import '../widgets/product_details_dialog.dart';
+
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -103,18 +100,22 @@ class _InventoryPageState extends State<InventoryPage> {
   Future<void> _loadFilterData() async {
     try {
       // Load categories
-      final categoriesResponse = await apiService.getProductCategories();
+      final categoriesResponse = await apiService.getCategoriesForDropdown();
       if (categoriesResponse['success']) {
         setState(() {
-          _categories = List<String>.from(categoriesResponse['data']['categories'] ?? []);
+          _categories = (categoriesResponse['data'] as List)
+              .map((category) => category['name'] as String)
+              .toList();
         });
       }
 
       // Load brands
-      final brandsResponse = await apiService.getProductBrands();
+      final brandsResponse = await apiService.getBrandsForDropdown();
       if (brandsResponse['success']) {
         setState(() {
-          _brands = List<String>.from(brandsResponse['data']['brands'] ?? []);
+          _brands = (brandsResponse['data'] as List)
+              .map((brand) => brand['name'] as String)
+              .toList();
         });
       }
     } catch (e) {
@@ -126,18 +127,22 @@ class _InventoryPageState extends State<InventoryPage> {
     setState(() {
       _filteredProducts = _products.where((product) {
         // Category filter
-        if (_selectedCategory.isNotEmpty && product['category'] != _selectedCategory) {
+        if (_selectedCategory.isNotEmpty && 
+            (product['category'] == null || 
+             product['category']['name'] != _selectedCategory)) {
           return false;
         }
         
         // Brand filter
-        if (_selectedBrand.isNotEmpty && product['brand'] != _selectedBrand) {
+        if (_selectedBrand.isNotEmpty && 
+            (product['brand'] == null || 
+             product['brand']['name'] != _selectedBrand)) {
           return false;
         }
         
         // Stock status filter
         if (_selectedStockStatus.isNotEmpty) {
-          final quantity = product['quantity'] ?? 0;
+          final quantity = product['stockQuantity'] ?? 0;
           switch (_selectedStockStatus) {
             case 'in_stock':
               if (quantity <= 0) return false;
@@ -205,7 +210,7 @@ class _InventoryPageState extends State<InventoryPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -230,17 +235,13 @@ class _InventoryPageState extends State<InventoryPage> {
                     Text(
                       'Total Products',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.branding_watermark, color: Colors.white),
-                onPressed: () => context.go('/inventory/brands'),
-                tooltip: 'Manage Brands',
-              ),
+
               IconButton(
                 icon: Icon(Icons.filter_list, color: Colors.white),
                 onPressed: _showFilterDialog,
@@ -280,31 +281,6 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildSearchAndActions(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          // Search bar
-          AppTextField(
-            label: 'Search products',
-            hint: 'Search by name, SKU, or description',
-            controller: _searchController,
-            prefixIcon: Icon(Icons.search),
-            onChanged: (value) {
-              _loadProducts(refresh: true);
-            },
-            style: AppTextFieldStyle.outlined,
-            size: AppTextFieldSize.large,
-          ),
-          const SizedBox(height: 16),
-          // Active filters display
-          if (_selectedCategory.isNotEmpty || _selectedBrand.isNotEmpty || _selectedStockStatus.isNotEmpty)
-            _buildActiveFilters(theme),
-        ],
-      ),
-    );
-  }
 
   Widget _buildActiveFilters(ThemeData theme) {
     return Wrap(
@@ -423,7 +399,7 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Widget _buildProductCard(ThemeData theme, Map<String, dynamic> product) {
-    final quantity = product['quantity'] ?? 0;
+    final quantity = product['stockQuantity'] ?? 0;
     final minStockLevel = product['minStockLevel'] ?? 0;
     final isLowStock = quantity > 0 && quantity <= minStockLevel;
     final isOutOfStock = quantity <= 0;
@@ -464,7 +440,7 @@ class _InventoryPageState extends State<InventoryPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '₹${(product['price'] ?? 0).toStringAsFixed(2)}',
+                        '₹${(product['sellingPrice'] ?? 0).toStringAsFixed(2)}',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary500,
@@ -506,19 +482,19 @@ class _InventoryPageState extends State<InventoryPage> {
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
-                  if (product['category'] != null && product['category'].toString().isNotEmpty)
+                  if (product['category'] != null && product['category']['name'] != null)
                     Expanded(
                       child: Text(
-                        'Category: ${product['category']}',
+                        'Category: ${product['category']['name']}',
                         style: theme.textTheme.bodyMedium,
                       ),
                     ),
                 ],
               ),
-              if (product['brand'] != null && product['brand'].toString().isNotEmpty) ...[
+              if (product['brand'] != null && product['brand']['name'] != null) ...[
                 SizedBox(height: 4),
                 Text(
-                  'Brand: ${product['brand']}',
+                  'Brand: ${product['brand']['name']}',
                   style: theme.textTheme.bodyMedium,
                 ),
               ],
@@ -529,20 +505,6 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
 
-  Widget _buildLoadMoreButton() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Center(
-        child: _isLoading
-            ? CircularProgressIndicator()
-            : AppButton(
-                text: 'Load More',
-                onPressed: _loadMoreProducts,
-                style: AppButtonStyle.secondary,
-              ),
-      ),
-    );
-  }
 
   void _showFilterDialog() {
     showDialog(
@@ -555,86 +517,85 @@ class _InventoryPageState extends State<InventoryPage> {
             children: [
               // Category filter
               if (_categories.isNotEmpty) ...[
-                DropdownButtonFormField<String>(
-                  value: _selectedCategory.isNotEmpty ? _selectedCategory : null,
-                  decoration: InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: '',
-                      child: Text('All Categories'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    DropdownButton<String>(
+                      value: _selectedCategory.isNotEmpty ? _selectedCategory : null,
+                      isExpanded: true,
+                      hint: Text('All Categories'),
+                      items: _categories.map((category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      )).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value ?? '';
+                        });
+                      },
                     ),
-                    ..._categories.map((category) => DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    )),
                   ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value ?? '';
-                    });
-                  },
                 ),
                 SizedBox(height: 16),
               ],
               // Brand filter
               if (_brands.isNotEmpty) ...[
-                DropdownButtonFormField<String>(
-                  value: _selectedBrand.isNotEmpty ? _selectedBrand : null,
-                  decoration: InputDecoration(
-                    labelText: 'Brand',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: '',
-                      child: Text('All Brands'),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Brand', style: TextStyle(fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    DropdownButton<String>(
+                      value: _selectedBrand.isNotEmpty ? _selectedBrand : null,
+                      isExpanded: true,
+                      hint: Text('All Brands'),
+                      items: _brands.map((brand) => DropdownMenuItem(
+                        value: brand,
+                        child: Text(brand),
+                      )).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedBrand = value ?? '';
+                        });
+                      },
                     ),
-                    ..._brands.map((brand) => DropdownMenuItem(
-                      value: brand,
-                      child: Text(brand),
-                    )),
                   ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedBrand = value ?? '';
-                    });
-                  },
                 ),
                 SizedBox(height: 16),
               ],
               // Stock status filter
-              DropdownButtonFormField<String>(
-                value: _selectedStockStatus.isNotEmpty ? _selectedStockStatus : null,
-                decoration: InputDecoration(
-                  labelText: 'Stock Status',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(
-                    value: '',
-                    child: Text('All'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'in_stock',
-                    child: Text('In Stock'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'low_stock',
-                    child: Text('Low Stock'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'out_of_stock',
-                    child: Text('Out of Stock'),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Stock Status', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  DropdownButton<String>(
+                    value: _selectedStockStatus.isNotEmpty ? _selectedStockStatus : null,
+                    isExpanded: true,
+                    hint: Text('All'),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'in_stock',
+                        child: Text('In Stock'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'low_stock',
+                        child: Text('Low Stock'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'out_of_stock',
+                        child: Text('Out of Stock'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedStockStatus = value ?? '';
+                      });
+                    },
                   ),
                 ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedStockStatus = value ?? '';
-                  });
-                },
               ),
               SizedBox(height: 16),
               // Active products filter

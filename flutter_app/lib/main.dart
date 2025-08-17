@@ -17,12 +17,18 @@ import 'features/inventory/presentation/widgets/add_product_dialog.dart';
 import 'features/inventory/presentation/pages/product_details_page.dart';
 import 'features/inventory/presentation/pages/brand_management_page.dart';
 import 'features/sales/presentation/pages/sales_page.dart';
+import 'features/sales/presentation/pages/add_sale_page.dart';
+import 'features/sales/presentation/pages/sale_details_page.dart';
+import 'features/sales/presentation/pages/edit_sale_page.dart';
 import 'features/customers/presentation/pages/customers_page.dart';
 import 'features/customers/presentation/pages/add_customer_page.dart';
 import 'features/customers/presentation/pages/customer_details_page.dart';
 
 import 'features/admin/presentation/pages/admin_page.dart';
+import 'features/admin/presentation/pages/categories_page.dart';
+import 'features/admin/presentation/pages/suppliers_page.dart';
 import 'features/reports/presentation/pages/reports_page.dart';
+import 'features/brands/presentation/pages/brands_page.dart';
 import 'shared/widgets/breadcrumb.dart';
 import 'core/services/breadcrumb_service.dart';
 
@@ -137,14 +143,30 @@ final _router = GoRouter(
           },
         ),
         GoRoute(
-          path: '/inventory/brands',
-          name: 'brand-management',
-          builder: (context, state) => const BrandManagementPage(),
-        ),
-        GoRoute(
           path: '/sales',
           name: 'sales',
           builder: (context, state) => const SalesPage(),
+        ),
+        GoRoute(
+          path: '/sales/add',
+          name: 'add-sale',
+          builder: (context, state) => const AddSalePage(),
+        ),
+        GoRoute(
+          path: '/sales/:id',
+          name: 'sale-details',
+          builder: (context, state) {
+            final saleId = state.pathParameters['id']!;
+            return SaleDetailsPage(saleId: saleId);
+          },
+        ),
+        GoRoute(
+          path: '/sales/:id/edit',
+          name: 'edit-sale',
+          builder: (context, state) {
+            final saleId = state.pathParameters['id']!;
+            return EditSalePage(saleId: saleId);
+          },
         ),
         GoRoute(
           path: '/customers',
@@ -162,6 +184,26 @@ final _router = GoRouter(
           builder: (context, state) => CustomerDetailsPage(
             customerId: state.pathParameters['id']!,
           ),
+        ),
+        GoRoute(
+          path: '/brands',
+          name: 'brands',
+          builder: (context, state) => const BrandsPage(),
+        ),
+        GoRoute(
+          path: '/categories',
+          name: 'categories',
+          builder: (context, state) => const CategoriesPage(),
+        ),
+        GoRoute(
+          path: '/suppliers',
+          name: 'suppliers',
+          builder: (context, state) => const SuppliersPage(),
+        ),
+        GoRoute(
+          path: '/inventory/brands',
+          name: 'brand-management',
+          builder: (context, state) => const BrandManagementPage(),
         ),
 
         GoRoute(
@@ -268,7 +310,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
     final location = GoRouterState.of(context).uri.path;
     
     // Don't show AppBar for pages with custom headers
-    if (location == '/customers' || location == '/inventory' || location == '/customers/add' || location == '/inventory/add') {
+    if (location == '/customers' || location == '/inventory' || location == '/customers/add' || location == '/inventory/add' || location == '/brands' || location == '/categories' || location == '/suppliers' || location == '/sales' || location.startsWith('/sales/')) {
       return null;
     }
     
@@ -278,7 +320,6 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
       leading: location == '/' 
           ? Consumer<AuthProvider>(
               builder: (context, authProvider, child) {
-                final user = authProvider.user;
                 return GestureDetector(
                   onTap: () {
                     context.go('/profile');
@@ -297,7 +338,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary500.withOpacity(0.3),
+                          color: AppColors.primary500.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -435,7 +476,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
       body: Column(
         children: [
           // Breadcrumb navigation (hide for pages with custom headers)
-          if (location != '/customers' && location != '/inventory' && location != '/customers/add' && location != '/inventory/add')
+          if (location != '/customers' && location != '/inventory' && location != '/customers/add' && location != '/inventory/add' && location != '/brands' && location != '/categories' && location != '/suppliers' && location != '/sales' && !location.startsWith('/sales/'))
             Breadcrumb(
               items: breadcrumbs,
               showHome: location != '/',
@@ -453,7 +494,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -483,7 +524,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       decoration: BoxDecoration(
                         color: isSelected 
-                            ? Colors.blue.withOpacity(0.1)
+                            ? Colors.blue.withValues(alpha: 0.1)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                       ),

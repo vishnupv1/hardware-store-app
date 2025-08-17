@@ -82,7 +82,6 @@ class _AddProductPageState extends State<AddProductPage> {
         });
       }
 
-      // TODO: Load suppliers when supplier API is available
       _suppliers = ['Supplier 1', 'Supplier 2', 'Supplier 3']; // Placeholder
     } catch (e) {
       // Handle error silently for now
@@ -395,7 +394,7 @@ class _AddProductPageState extends State<AddProductPage> {
             // Category dropdown or text field
             if (_categories.isNotEmpty) ...[
               DropdownButtonFormField<String>(
-                value: _selectedCategory.isNotEmpty ? _selectedCategory : null,
+                initialValue: _selectedCategory.isNotEmpty ? _selectedCategory : null,
                 decoration: InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(),
@@ -430,7 +429,7 @@ class _AddProductPageState extends State<AddProductPage> {
             // Brand dropdown or text field
             if (_brands.isNotEmpty) ...[
               DropdownButtonFormField<String>(
-                value: _selectedBrand.isNotEmpty ? _selectedBrand : null,
+                initialValue: _selectedBrand.isNotEmpty ? _selectedBrand : null,
                 decoration: InputDecoration(
                   labelText: 'Brand',
                   border: OutlineInputBorder(),
@@ -465,7 +464,7 @@ class _AddProductPageState extends State<AddProductPage> {
             // Supplier dropdown or text field
             if (_suppliers.isNotEmpty) ...[
               DropdownButtonFormField<String>(
-                value: _selectedSupplier.isNotEmpty ? _selectedSupplier : null,
+                initialValue: _selectedSupplier.isNotEmpty ? _selectedSupplier : null,
                 decoration: InputDecoration(
                   labelText: 'Supplier',
                   border: OutlineInputBorder(),
@@ -550,7 +549,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   _isActive = value;
                 });
               },
-              activeColor: AppColors.primary500,
+              activeThumbColor: AppColors.primary500,
             ),
           ],
         ),

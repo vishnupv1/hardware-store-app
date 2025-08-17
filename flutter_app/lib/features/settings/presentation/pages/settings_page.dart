@@ -257,7 +257,7 @@ class _SettingsPageState extends State<SettingsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -297,7 +297,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary500.withOpacity(0.1),
+              color: AppColors.primary500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -351,7 +351,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primary500.withOpacity(0.1),
+              color: AppColors.primary500.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -413,43 +413,115 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showLanguageDialog(ThemeData theme) {
+    String tempSelectedLanguage = _selectedLanguage;
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Select Language',
-          style: theme.textTheme.titleLarge,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildLanguageOption(theme, 'English', 'English'),
-            _buildLanguageOption(theme, 'Spanish', 'Español'),
-            _buildLanguageOption(theme, 'French', 'Français'),
-            _buildLanguageOption(theme, 'German', 'Deutsch'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(
+            'Select Language',
+            style: theme.textTheme.titleLarge,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildLanguageOption(
+                theme,
+                'English',
+                tempSelectedLanguage,
+                (value) => setDialogState(() => tempSelectedLanguage = value),
+              ),
+              _buildLanguageOption(
+                theme,
+                'Spanish',
+                tempSelectedLanguage,
+                (value) => setDialogState(() => tempSelectedLanguage = value),
+              ),
+              _buildLanguageOption(
+                theme,
+                'French',
+                tempSelectedLanguage,
+                (value) => setDialogState(() => tempSelectedLanguage = value),
+              ),
+              _buildLanguageOption(
+                theme,
+                'German',
+                tempSelectedLanguage,
+                (value) => setDialogState(() => tempSelectedLanguage = value),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _selectedLanguage = tempSelectedLanguage;
+                });
+                Navigator.of(context).pop();
+              },
+              child: Text('OK'),
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Cancel'),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildLanguageOption(ThemeData theme, String value, String label) {
-    return RadioListTile<String>(
-      title: Text(label),
-      value: value,
-      groupValue: _selectedLanguage,
-      onChanged: (newValue) {
-        setState(() {
-          _selectedLanguage = newValue!;
-        });
-        Navigator.of(context).pop();
-      },
+  Widget _buildLanguageOption(
+    ThemeData theme,
+    String language,
+    String selectedLanguage,
+    ValueChanged<String> onChanged,
+  ) {
+    final isSelected = selectedLanguage == language;
+    
+    return GestureDetector(
+      onTap: () => onChanged(language),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected 
+            ? AppColors.primary500.withValues(alpha: 0.1)
+            : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.primary500 : theme.colorScheme.onSurfaceVariant,
+                  width: 2,
+                ),
+                color: isSelected ? AppColors.primary500 : Colors.transparent,
+              ),
+              child: isSelected
+                ? Icon(
+                    Icons.check,
+                    size: 14,
+                    color: Colors.white,
+                  )
+                : null,
+            ),
+            const SizedBox(width: 16),
+            Text(
+              language,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppColors.primary500 : theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -13,6 +13,10 @@ const userRoutes = require('./routes/user');
 const customerRoutes = require('./routes/customers');
 const productRoutes = require('./routes/products');
 const saleRoutes = require('./routes/sales');
+const brandRoutes = require('./routes/brands');
+const categoryRoutes = require('./routes/categories');
+const supplierRoutes = require('./routes/suppliers');
+const dashboardRoutes = require('./routes/dashboard');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -84,6 +88,10 @@ app.use('/api/user', userRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
+app.use('/api/brands', brandRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/suppliers', supplierRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -113,7 +121,7 @@ const connectDB = async () => {
       }
     );
     
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+
   } catch (error) {
     console.error('Database connection error:', error.message);
     process.exit(1);
@@ -122,17 +130,13 @@ const connectDB = async () => {
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
   mongoose.connection.close(() => {
-    console.log('MongoDB connection closed');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
   mongoose.connection.close(() => {
-    console.log('MongoDB connection closed');
     process.exit(0);
   });
 });
@@ -145,6 +149,7 @@ const startServer = async () => {
     console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
     console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+    // Server started successfully
   });
 };
 

@@ -34,25 +34,20 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
 
   Future<void> _loadBrands() async {
     try {
-      print('Loading brands...');
       final response = await apiService.getProductBrands();
-      print('Brands response: $response');
       
       if (response['success']) {
         setState(() {
           _brands = List<String>.from(response['data']['brands'] ?? []);
           _isLoading = false;
         });
-        print('Loaded ${_brands.length} brands: $_brands');
       } else {
         setState(() {
           _errorMessage = response['message'] ?? 'Failed to load brands';
           _isLoading = false;
         });
-        print('Failed to load brands: ${response['message']}');
       }
     } catch (e) {
-      print('Error loading brands: $e');
       setState(() {
         _errorMessage = 'Error loading brands: $e';
         _isLoading = false;
@@ -81,10 +76,9 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
     });
 
     try {
-      print('Adding brand: $brandName');
-      
       final response = await apiService.addProductBrand(brandName);
-      print('Add brand response: $response');
+      
+      if (!mounted) return;
       
       if (response['success']) {
         setState(() {
@@ -112,15 +106,17 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
       }
       
     } catch (e) {
-      setState(() {
-        _isAddingBrand = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error adding brand: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        setState(() {
+          _isAddingBrand = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error adding brand: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -144,7 +140,7 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed == true && mounted) {
       try {
         // Note: This is a simplified approach. In a real app, you'd have a proper brand management API
         // For now, we'll just remove it from the local list
@@ -152,19 +148,23 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
           _brands.remove(brandName);
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Brand "$brandName" deleted successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Brand "$brandName" deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting brand: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting brand: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -272,7 +272,7 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
               leading: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary500.withOpacity(0.1),
+                  color: AppColors.primary500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -307,7 +307,7 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
     _brandController.clear();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Add New Brand'),
         content: Form(
           key: _formKey,
@@ -339,14 +339,14 @@ class _BrandManagementPageState extends State<BrandManagementPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: _isAddingBrand ? null : () async {
               await _addBrand();
               if (mounted && !_isAddingBrand) {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               }
             },
             child: _isAddingBrand

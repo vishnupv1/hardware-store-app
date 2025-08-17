@@ -47,7 +47,6 @@ const saleSchema = new mongoose.Schema({
   },
   invoiceNumber: {
     type: String,
-    required: [true, 'Invoice number is required'],
     unique: true,
     trim: true
   },
@@ -154,17 +153,19 @@ const saleSchema = new mongoose.Schema({
 
 // Virtual for total items count
 saleSchema.virtual('totalItems').get(function() {
-  return this.items.reduce((sum, item) => sum + item.quantity, 0);
+  return this.items && this.items.length > 0 
+    ? this.items.reduce((sum, item) => sum + (item.quantity || 0), 0)
+    : 0;
 });
 
 // Virtual for final total (including shipping)
 saleSchema.virtual('finalTotal').get(function() {
-  return this.totalAmount + this.shippingCost;
+  return (this.totalAmount || 0) + (this.shippingCost || 0);
 });
 
 // Virtual for paid amount
 saleSchema.virtual('paidAmount').get(function() {
-  if (this.paymentStatus === 'paid') return this.finalTotal;
+  if (this.paymentStatus === 'paid') return this.finalTotal || 0;
   if (this.paymentStatus === 'partial') {
     // This would need to be calculated from payment history
     return 0;
@@ -174,7 +175,7 @@ saleSchema.virtual('paidAmount').get(function() {
 
 // Virtual for outstanding amount
 saleSchema.virtual('outstandingAmount').get(function() {
-  return this.finalTotal - this.paidAmount;
+  return (this.finalTotal || 0) - (this.paidAmount || 0);
 });
 
 // Indexes for better query performance
@@ -188,23 +189,33 @@ saleSchema.index({ invoiceNumber: 1 });
 
 // Pre-save middleware to generate invoice number
 saleSchema.pre('save', async function(next) {
-  if (this.isNew && !this.invoiceNumber) {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    
-    // Get count of sales for this month
-    const count = await this.constructor.countDocuments({
-      clientId: this.clientId,
-      saleDate: {
-        $gte: new Date(year, date.getMonth(), 1),
-        $lt: new Date(year, date.getMonth() + 1, 1)
-      }
-    });
-    
-    this.invoiceNumber = `INV-${year}${month}-${String(count + 1).padStart(4, '0')}`;
+  try {
+    if (this.isNew && !this.invoiceNumber) {
+      const date = new Date();
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      
+      // Get count of sales for this month
+      const count = await this.constructor.countDocuments({
+        clientId: this.clientId,
+        createdAt: {
+          $gte: new Date(year, date.getMonth(), 1),
+          $lt: new Date(year, date.getMonth() + 1, 1)
+        }
+      });
+      
+      // Generate invoice number with timestamp to ensure uniqueness
+      const timestamp = Date.now().toString().slice(-6);
+      this.invoiceNumber = `INV-${year}${month}-${String(count + 1).padStart(4, '0')}-${timestamp}`;
+    }
+    next();
+  } catch (error) {
+    console.error('Error generating invoice number:', error);
+    // Generate a fallback invoice number if there's an error
+    const timestamp = Date.now();
+    this.invoiceNumber = `INV-${timestamp}`;
+    next();
   }
-  next();
 });
 
 // Pre-save middleware to update customer stats
@@ -214,7 +225,7 @@ saleSchema.pre('save', async function(next) {
     await Customer.findByIdAndUpdate(this.customerId, {
       $inc: {
         totalPurchases: 1,
-        totalSpent: this.finalTotal
+        totalSpent: this.totalAmount || 0
       },
       lastPurchaseDate: this.saleDate
     });

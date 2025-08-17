@@ -15,6 +15,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late AnimationController _animationController;
+  late AnimationController _refreshAnimationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   
@@ -22,13 +23,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Map<String, dynamic>? _customerStats;
   Map<String, dynamic>? _productStats;
   Map<String, dynamic>? _salesStats;
+  Map<String, dynamic>? _recentActivity;
   bool _isLoading = true;
+  
+  // Speed dial state
+  bool _isSpeedDialOpen = false;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _refreshAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     );
 
@@ -54,14 +64,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Future<void> _loadDashboardData() async {
     try {
-      final customerStats = await apiService.getCustomerStats();
-      final productStats = await apiService.getProductStats();
-      final salesStats = await apiService.getSalesStats();
+      // Load all dashboard stats in a single API call
+      final dashboardResponse = await apiService.getDashboardStats();
 
+      if (dashboardResponse['success'] == false) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final dashboardData = dashboardResponse['data'];
+      
       setState(() {
-        _customerStats = customerStats['data'];
-        _productStats = productStats['data'];
-        _salesStats = salesStats['data'];
+        _customerStats = dashboardData['customerStats'] ?? {};
+        _productStats = dashboardData['productStats'] ?? {};
+        _salesStats = dashboardData['salesStats'] ?? {};
+        _recentActivity = dashboardData['recentActivity'] ?? {};
         _isLoading = false;
       });
     } catch (e) {
@@ -71,9 +90,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
   }
 
+  Future<void> _refreshDashboardData() async {
+    // Start the refresh animation
+    _refreshAnimationController.repeat();
+    
+    await _loadDashboardData();
+    
+    // Stop the refresh animation
+    _refreshAnimationController.stop();
+    _refreshAnimationController.reset();
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
+    _refreshAnimationController.dispose();
     super.dispose();
   }
 
@@ -84,32 +115,42 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.neutral900 : AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
-                  child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+      floatingActionButton: _buildSpeedDial(),
+      body: RefreshIndicator(
+        onRefresh: _refreshDashboardData,
+        color: AppColors.primary500,
+        backgroundColor: isDark ? AppColors.neutral800 : AppColors.background,
+        strokeWidth: 3.0,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildWelcomeSection(theme),
                         const SizedBox(height: 24),
                         _buildDashboardCards(theme),
                         const SizedBox(height: 24),
+                        _buildRecentActivitySection(theme),
+                        const SizedBox(height: 24),
                         _buildQuickActionsSection(theme),
                         const SizedBox(height: 24),
                         _buildFeatureShowcaseSection(theme),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -130,7 +171,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: const Color.fromARGB(255, 36, 175, 255).withOpacity(0.3),
+                color: const Color.fromARGB(255, 36, 175, 255).withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -145,7 +186,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(25),
                     ),
                     child: const Icon(
@@ -169,7 +210,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         Text(
                           user?.role == 'client' ? 'Client' : 'User',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -196,9 +237,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildDashboardCards(ThemeData theme) {
     if (_isLoading) {
-      return Container(
+      return const SizedBox(
         height: 200,
-        child: const Center(
+        child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -223,29 +264,40 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
             const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.success500.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.trending_up,
-                    color: AppColors.success500,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Live Data',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.success500,
-                      fontWeight: FontWeight.w600,
+            GestureDetector(
+              onTap: _refreshDashboardData,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.success500.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedBuilder(
+                      animation: _refreshAnimationController,
+                      builder: (context, child) {
+                        return Transform.rotate(
+                          angle: _refreshAnimationController.value * 2 * 3.14159,
+                          child: Icon(
+                            Icons.refresh,
+                            color: AppColors.success500,
+                            size: 16,
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      'Refresh',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.success500,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -380,10 +432,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -392,7 +444,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -416,7 +468,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   Text(
                     message,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -452,7 +504,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -466,7 +518,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -478,7 +530,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 const Spacer(),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   size: 16,
                 ),
               ],
@@ -495,7 +547,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Text(
               title,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -503,7 +555,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Text(
               subtitle,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -524,76 +576,130 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                theme,
-                'New Sale',
-                Icons.point_of_sale,
-                AppColors.primary500,
-                () {
-                  context.go('/sales');
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                theme,
-                'Add Product',
-                Icons.add_box,
-                AppColors.success500,
-                () {
-                  context.go('/inventory');
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                theme,
-                'Customers',
-                Icons.people,
-                AppColors.warning500,
-                () {
-                  context.go('/customers');
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
+        _buildQuickActionsAccordion(theme),
+      ],
+    );
+  }
 
+  Widget _buildQuickActionsAccordion(ThemeData theme) {
+    return Column(
+      children: [
+        _buildAccordionItem(
+          theme,
+          'Sales Management',
+          Icons.point_of_sale,
+          AppColors.primary500,
+          [
+            _buildAccordionAction(
+              theme,
+              'New Sale',
+              Icons.add_shopping_cart,
+              'Create a new sales transaction',
+              () => context.go('/sales'),
+            ),
+            _buildAccordionAction(
+              theme,
+              'View Sales',
+              Icons.receipt_long,
+              'View all sales history',
+              () => context.go('/sales'),
+            ),
+            _buildAccordionAction(
+              theme,
+              'Sales Reports',
+              Icons.analytics,
+              'Generate sales reports',
+              () => context.go('/reports'),
+            ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                theme,
-                'Reports',
-                Icons.analytics,
-                AppColors.info500,
-                () {
-                  context.go('/reports');
-                },
-              ),
+        const SizedBox(height: 8),
+        _buildAccordionItem(
+          theme,
+          'Inventory Management',
+          Icons.inventory,
+          AppColors.success500,
+          [
+            _buildAccordionAction(
+              theme,
+              'Add Product',
+              Icons.add_box,
+              'Add new product to inventory',
+              () => context.go('/inventory/add'),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                theme,
-                'Settings',
-                Icons.settings,
-                AppColors.neutral500,
-                () {
-                  context.go('/settings');
-                },
-              ),
+            _buildAccordionAction(
+              theme,
+              'View Products',
+              Icons.inventory_2,
+              'Browse all products',
+              () => context.go('/inventory'),
+            ),
+            _buildAccordionAction(
+              theme,
+              'Manage Brands',
+              Icons.branding_watermark,
+              'Add or edit product brands',
+              () => context.go('/brands'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _buildAccordionItem(
+          theme,
+          'Customer Management',
+          Icons.people,
+          AppColors.warning500,
+          [
+            _buildAccordionAction(
+              theme,
+              'Add Customer',
+              Icons.person_add,
+              'Register new customer',
+              () => context.go('/customers/add'),
+            ),
+            _buildAccordionAction(
+              theme,
+              'View Customers',
+              Icons.people_outline,
+              'Browse customer database',
+              () => context.go('/customers'),
+            ),
+            _buildAccordionAction(
+              theme,
+              'Customer Reports',
+              Icons.assessment,
+              'View customer analytics',
+              () => context.go('/reports'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _buildAccordionItem(
+          theme,
+          'System & Reports',
+          Icons.settings,
+          AppColors.info500,
+          [
+            _buildAccordionAction(
+              theme,
+              'Analytics Dashboard',
+              Icons.dashboard,
+              'View business analytics',
+              () => context.go('/reports'),
+            ),
+            _buildAccordionAction(
+              theme,
+              'System Settings',
+              Icons.settings,
+              'Configure system preferences',
+              () => context.go('/settings'),
+            ),
+            _buildAccordionAction(
+              theme,
+              'Admin Panel',
+              Icons.admin_panel_settings,
+              'Access admin functions',
+              () => context.go('/admin'),
             ),
           ],
         ),
@@ -601,79 +707,126 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildActionCard(
+  Widget _buildAccordionItem(
     ThemeData theme,
     String title,
     IconData icon,
     Color color,
+    List<Widget> children,
+  ) {
+    return ExpansionTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: 24,
+        ),
+      ),
+      title: Text(
+        title,
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurface,
+        ),
+      ),
+      backgroundColor: theme.colorScheme.surface,
+      collapsedBackgroundColor: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: color.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      collapsedShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: color.withValues(alpha: 0.1),
+          width: 1,
+        ),
+      ),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.02),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(12),
+              bottomRight: Radius.circular(12),
+            ),
+          ),
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAccordionAction(
+    ThemeData theme,
+    String title,
+    IconData icon,
+    String description,
     VoidCallback onTap,
   ) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.1),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.primary500.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: color,
-                size: 32,
+                color: AppColors.primary500,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Tap to open',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: theme.colorScheme.onSurfaceVariant,
+              size: 16,
             ),
           ],
         ),
       ),
     );
   }
+
+
 
 
 
@@ -695,7 +848,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: AppColors.secondary500.withOpacity(0.3),
+                color: AppColors.secondary500.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -725,14 +878,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Text(
                 'Manage inventory, track sales, handle customers, and generate reports for your hardware wholesale business.',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
               ),
               const SizedBox(height: 16),
               AppButton(
                 text: 'View Reports',
                 onPressed: () {
-                  // TODO: Navigate to reports page when created
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Reports feature coming soon!'),
@@ -750,6 +902,284 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ),
       ],
     );
+  }
+
+  Widget _buildSpeedDial() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Speed dial items
+        if (_isSpeedDialOpen) ...[
+          _buildSpeedDialItem(
+            icon: Icons.point_of_sale,
+            label: 'Sale',
+            color: AppColors.success500,
+            onTap: () => context.go('/sales/add'),
+          ),
+          const SizedBox(height: 16),
+          _buildSpeedDialItem(
+            icon: Icons.person_add,
+            label: 'Customer',
+            color: AppColors.primary500,
+            onTap: () => context.go('/customers/add'),
+          ),
+          const SizedBox(height: 16),
+          _buildSpeedDialItem(
+            icon: Icons.inventory,
+            label: 'Product',
+            color: AppColors.warning500,
+            onTap: () => context.go('/inventory/add'),
+          ),
+          const SizedBox(height: 16),
+        ],
+        // Main FAB button
+        FloatingActionButton(
+          onPressed: () {
+            setState(() {
+              _isSpeedDialOpen = !_isSpeedDialOpen;
+            });
+          },
+          backgroundColor: AppColors.primary500,
+          child: AnimatedRotation(
+            turns: _isSpeedDialOpen ? 0.125 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: Icon(
+              _isSpeedDialOpen ? Icons.close : Icons.add,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSpeedDialItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: label,
+      preferBelow: false,
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentActivitySection(ThemeData theme) {
+    if (_recentActivity == null) {
+      return const SizedBox.shrink();
+    }
+
+    final recentSales = _recentActivity!['recentSales'] as List? ?? [];
+    final recentCustomers = _recentActivity!['recentCustomers'] as List? ?? [];
+    final lowStockProducts = _recentActivity!['lowStockProducts'] as List? ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recent Activity',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        // Recent Sales
+        if (recentSales.isNotEmpty) ...[
+          _buildActivityCard(
+            theme,
+            'Recent Sales',
+            Icons.point_of_sale,
+            AppColors.success500,
+            recentSales.map((sale) => {
+              'title': sale['invoiceNumber'] ?? 'N/A',
+              'subtitle': '${sale['customerName'] ?? 'N/A'} - ₹${sale['totalAmount']?.toStringAsFixed(0) ?? '0'}',
+              'status': sale['saleStatus'] ?? 'completed',
+            }).toList(),
+            () => context.go('/sales'),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // Recent Customers
+        if (recentCustomers.isNotEmpty) ...[
+          _buildActivityCard(
+            theme,
+            'Recent Customers',
+            Icons.people,
+            AppColors.primary500,
+            recentCustomers.map((customer) => {
+              'title': customer['name'] ?? 'N/A',
+              'subtitle': '${customer['email'] ?? 'N/A'} - ${customer['customerType'] ?? 'N/A'}',
+              'status': 'active',
+            }).toList(),
+            () => context.go('/customers'),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        // Low Stock Products
+        if (lowStockProducts.isNotEmpty) ...[
+          _buildActivityCard(
+            theme,
+            'Low Stock Alerts',
+            Icons.warning,
+            AppColors.warning500,
+            lowStockProducts.map((product) => {
+              'title': product['name'] ?? 'N/A',
+              'subtitle': 'Stock: ${product['stockQuantity'] ?? 0} (Min: ${product['minStockLevel'] ?? 0})',
+              'status': 'warning',
+            }).toList(),
+            () => context.go('/inventory'),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildActivityCard(
+    ThemeData theme,
+    String title,
+    IconData icon,
+    Color color,
+    List<Map<String, dynamic>> items,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: color,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ...items.take(3).map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['title'],
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            item['subtitle'],
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(item['status']).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        item['status'],
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: _getStatusColor(item['status']),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return AppColors.success500;
+      case 'pending':
+        return AppColors.warning500;
+      case 'cancelled':
+        return AppColors.error500;
+      case 'active':
+        return AppColors.success500;
+      case 'warning':
+        return AppColors.warning500;
+      default:
+        return AppColors.neutral500;
+    }
   }
 }
 

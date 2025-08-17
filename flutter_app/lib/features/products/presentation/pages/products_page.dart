@@ -483,6 +483,12 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   void _showFilterDialog() {
+    // Create local variables to track changes
+    String tempCategory = _selectedCategory;
+    String tempBrand = _selectedBrand;
+    String tempStockStatus = _selectedStockStatus;
+    bool tempShowOnlyActive = _showOnlyActive;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -494,7 +500,7 @@ class _ProductsPageState extends State<ProductsPage> {
               // Category filter
               if (_categories.isNotEmpty) ...[
                 DropdownButtonFormField<String>(
-                  value: _selectedCategory.isNotEmpty ? _selectedCategory : null,
+                  initialValue: tempCategory.isNotEmpty ? tempCategory : null,
                   decoration: InputDecoration(
                     labelText: 'Category',
                     border: OutlineInputBorder(),
@@ -511,7 +517,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   ],
                   onChanged: (value) {
                     setState(() {
-                      _selectedCategory = value ?? '';
+                      tempCategory = value ?? '';
                     });
                   },
                 ),
@@ -520,7 +526,7 @@ class _ProductsPageState extends State<ProductsPage> {
               // Brand filter
               if (_brands.isNotEmpty) ...[
                 DropdownButtonFormField<String>(
-                  value: _selectedBrand.isNotEmpty ? _selectedBrand : null,
+                  initialValue: tempBrand.isNotEmpty ? tempBrand : null,
                   decoration: InputDecoration(
                     labelText: 'Brand',
                     border: OutlineInputBorder(),
@@ -537,7 +543,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   ],
                   onChanged: (value) {
                     setState(() {
-                      _selectedBrand = value ?? '';
+                      tempBrand = value ?? '';
                     });
                   },
                 ),
@@ -545,7 +551,7 @@ class _ProductsPageState extends State<ProductsPage> {
               ],
               // Stock status filter
               DropdownButtonFormField<String>(
-                value: _selectedStockStatus.isNotEmpty ? _selectedStockStatus : null,
+                initialValue: tempStockStatus.isNotEmpty ? tempStockStatus : null,
                 decoration: InputDecoration(
                   labelText: 'Stock Status',
                   border: OutlineInputBorder(),
@@ -570,7 +576,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 ],
                 onChanged: (value) {
                   setState(() {
-                    _selectedStockStatus = value ?? '';
+                    tempStockStatus = value ?? '';
                   });
                 },
               ),
@@ -578,10 +584,10 @@ class _ProductsPageState extends State<ProductsPage> {
               // Active products filter
               SwitchListTile(
                 title: Text('Show only active products'),
-                value: _showOnlyActive,
+                value: tempShowOnlyActive,
                 onChanged: (value) {
                   setState(() {
-                    _showOnlyActive = value;
+                    tempShowOnlyActive = value;
                   });
                 },
               ),
@@ -592,10 +598,10 @@ class _ProductsPageState extends State<ProductsPage> {
           TextButton(
             onPressed: () {
               setState(() {
-                _selectedCategory = '';
-                _selectedBrand = '';
-                _selectedStockStatus = '';
-                _showOnlyActive = true;
+                tempCategory = '';
+                tempBrand = '';
+                tempStockStatus = '';
+                tempShowOnlyActive = true;
               });
             },
             child: Text('Clear All'),
@@ -606,6 +612,13 @@ class _ProductsPageState extends State<ProductsPage> {
           ),
           ElevatedButton(
             onPressed: () {
+              // Update the main state variables
+              setState(() {
+                _selectedCategory = tempCategory;
+                _selectedBrand = tempBrand;
+                _selectedStockStatus = tempStockStatus;
+                _showOnlyActive = tempShowOnlyActive;
+              });
               Navigator.of(context).pop();
               _applyFilters();
             },

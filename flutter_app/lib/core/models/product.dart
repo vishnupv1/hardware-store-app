@@ -46,9 +46,9 @@ class Product {
       id: json['_id'] ?? json['id'],
       name: json['name'],
       description: json['description'],
-      category: json['category'],
-      subcategory: json['subcategory'],
-      brand: json['brand'],
+      category: _extractName(json['category']),
+      subcategory: _extractName(json['subcategory']),
+      brand: _extractName(json['brand']),
       model: json['model'],
       sku: json['sku'],
       costPrice: (json['costPrice'] ?? 0).toDouble(),
@@ -63,6 +63,15 @@ class Product {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );
+  }
+
+  static String _extractName(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value;
+    if (value is Map<String, dynamic>) {
+      return value['name'] ?? '';
+    }
+    return '';
   }
 
   Map<String, dynamic> toJson() {

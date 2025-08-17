@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/dropdown_field.dart';
 
 class UpperCaseTextInputFormatter extends TextInputFormatter {
   @override
@@ -31,30 +32,27 @@ class _AddProductPageState extends State<AddProductPage> {
   final _descriptionController = TextEditingController();
   final _skuController = TextEditingController();
   final _barcodeController = TextEditingController();
-  final _priceController = TextEditingController();
   final _costPriceController = TextEditingController();
-  final _quantityController = TextEditingController();
+  final _sellingPriceController = TextEditingController();
+  final _wholesalePriceController = TextEditingController();
+  final _stockQuantityController = TextEditingController();
   final _minStockLevelController = TextEditingController();
-  final _categoryController = TextEditingController();
-  final _brandController = TextEditingController();
-  final _supplierController = TextEditingController();
+  final _unitController = TextEditingController();
+  final _modelController = TextEditingController();
   final _weightController = TextEditingController();
-  final _dimensionsController = TextEditingController();
+  final _lengthController = TextEditingController();
+  final _widthController = TextEditingController();
+  final _heightController = TextEditingController();
 
-  String _selectedCategory = '';
-  String _selectedBrand = '';
-  String _selectedSupplier = '';
+  String? _selectedCategory;
+  String? _selectedBrand;
+  String? _selectedSupplier;
   bool _isLoading = false;
   bool _isActive = true;
-  
-  List<String> _categories = [];
-  List<String> _brands = [];
-  List<String> _suppliers = ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Other'];
 
   @override
   void initState() {
     super.initState();
-    _loadCategoriesAndBrands();
   }
 
   @override
@@ -63,40 +61,21 @@ class _AddProductPageState extends State<AddProductPage> {
     _descriptionController.dispose();
     _skuController.dispose();
     _barcodeController.dispose();
-    _priceController.dispose();
     _costPriceController.dispose();
-    _quantityController.dispose();
+    _sellingPriceController.dispose();
+    _wholesalePriceController.dispose();
+    _stockQuantityController.dispose();
     _minStockLevelController.dispose();
-    _categoryController.dispose();
-    _brandController.dispose();
-    _supplierController.dispose();
+    _unitController.dispose();
+    _modelController.dispose();
     _weightController.dispose();
-    _dimensionsController.dispose();
+    _lengthController.dispose();
+    _widthController.dispose();
+    _heightController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadCategoriesAndBrands() async {
-    try {
-      // Load categories
-      final categoriesResponse = await apiService.getProductCategories();
-      if (categoriesResponse['success']) {
-        setState(() {
-          _categories = List<String>.from(categoriesResponse['data']['categories'] ?? []);
-        });
-      }
 
-      // Load brands
-      final brandsResponse = await apiService.getProductBrands();
-      if (brandsResponse['success']) {
-        setState(() {
-          _brands = List<String>.from(brandsResponse['data']['brands'] ?? []);
-        });
-      }
-    } catch (e) {
-      // Handle error silently or show a snackbar
-      print('Error loading categories and brands: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +105,7 @@ class _AddProductPageState extends State<AddProductPage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -151,7 +130,7 @@ class _AddProductPageState extends State<AddProductPage> {
                             Text(
                               'Create new product',
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                               ),
                             ),
                           ],
@@ -268,7 +247,30 @@ class _AddProductPageState extends State<AddProductPage> {
           children: [
             Expanded(
               child: _buildTextField(
-                controller: _priceController,
+                controller: _costPriceController,
+                label: 'Cost Price (₹)',
+                hint: '0.00',
+                icon: Icons.shopping_cart,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ],
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Cost price is required';
+                  }
+                  final price = double.tryParse(value);
+                  if (price == null || price < 0) {
+                    return 'Please enter a valid price';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildTextField(
+                controller: _sellingPriceController,
                 label: 'Selling Price (₹)',
                 hint: '0.00',
                 icon: Icons.sell,
@@ -288,17 +290,40 @@ class _AddProductPageState extends State<AddProductPage> {
                 },
               ),
             ),
-            const SizedBox(width: 8),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
             Expanded(
               child: _buildTextField(
-                controller: _costPriceController,
-                label: 'Cost Price (₹)',
+                controller: _wholesalePriceController,
+                label: 'Wholesale Price (₹)',
                 hint: '0.00',
-                icon: Icons.shopping_cart,
+                icon: Icons.store,
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                 ],
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Wholesale price is required';
+                  }
+                  final price = double.tryParse(value);
+                  if (price == null || price < 0) {
+                    return 'Please enter a valid price';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildTextField(
+                controller: _modelController,
+                label: 'Model',
+                hint: 'Product model',
+                icon: Icons.model_training,
               ),
             ),
           ],
@@ -317,8 +342,8 @@ class _AddProductPageState extends State<AddProductPage> {
           children: [
             Expanded(
               child: _buildTextField(
-                controller: _quantityController,
-                label: 'Quantity',
+                controller: _stockQuantityController,
+                label: 'Stock Quantity',
                 hint: '0',
                 icon: Icons.numbers,
                 keyboardType: TextInputType.number,
@@ -327,7 +352,7 @@ class _AddProductPageState extends State<AddProductPage> {
                 ],
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Quantity is required';
+                    return 'Stock quantity is required';
                   }
                   final quantity = int.tryParse(value);
                   if (quantity == null || quantity < 0) {
@@ -362,55 +387,37 @@ class _AddProductPageState extends State<AddProductPage> {
       'Product Details',
       Icons.category,
       [
-        _buildDropdownField(
+        DropdownField(
           label: 'Category',
-          value: _selectedCategory.isEmpty ? null : _selectedCategory,
-          items: _categories.map((category) {
-            return DropdownMenuItem(
-              value: category,
-              child: Text(category),
-            );
-          }).toList(),
+          value: _selectedCategory,
           onChanged: (value) {
             setState(() {
-              _selectedCategory = value ?? '';
+              _selectedCategory = value;
             });
           },
-          icon: Icons.category,
+          type: 'category',
         ),
         const SizedBox(height: 16),
-        _buildDropdownField(
+        DropdownField(
           label: 'Brand',
-          value: _selectedBrand.isEmpty ? null : _selectedBrand,
-          items: _brands.map((brand) {
-            return DropdownMenuItem(
-              value: brand,
-              child: Text(brand),
-            );
-          }).toList(),
+          value: _selectedBrand,
           onChanged: (value) {
             setState(() {
-              _selectedBrand = value ?? '';
+              _selectedBrand = value;
             });
           },
-          icon: Icons.branding_watermark,
+          type: 'brand',
         ),
         const SizedBox(height: 16),
-        _buildDropdownField(
+        DropdownField(
           label: 'Supplier',
-          value: _selectedSupplier.isEmpty ? null : _selectedSupplier,
-          items: _suppliers.map((supplier) {
-            return DropdownMenuItem(
-              value: supplier,
-              child: Text(supplier),
-            );
-          }).toList(),
+          value: _selectedSupplier,
           onChanged: (value) {
             setState(() {
-              _selectedSupplier = value ?? '';
+              _selectedSupplier = value;
             });
           },
-          icon: Icons.local_shipping,
+          type: 'supplier',
         ),
         const SizedBox(height: 16),
         Row(
@@ -430,10 +437,62 @@ class _AddProductPageState extends State<AddProductPage> {
             const SizedBox(width: 8),
             Expanded(
               child: _buildTextField(
-                controller: _dimensionsController,
-                label: 'Dimensions',
-                hint: 'L x W x H cm',
+                controller: _unitController,
+                label: 'Unit',
+                hint: 'pcs, kg, m, etc.',
+                icon: Icons.category,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Unit is required';
+                  }
+                  if (value.trim().length > 20) {
+                    return 'Unit cannot exceed 20 characters';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: _lengthController,
+                label: 'Length (cm)',
+                hint: '0.0',
                 icon: Icons.straighten,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildTextField(
+                controller: _widthController,
+                label: 'Width (cm)',
+                hint: '0.0',
+                icon: Icons.straighten,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildTextField(
+                controller: _heightController,
+                label: 'Height (cm)',
+                hint: '0.0',
+                icon: Icons.straighten,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ],
               ),
             ),
           ],
@@ -470,7 +529,7 @@ class _AddProductPageState extends State<AddProductPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -484,7 +543,7 @@ class _AddProductPageState extends State<AddProductPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary500.withOpacity(0.1),
+                  color: AppColors.primary500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -566,66 +625,7 @@ class _AddProductPageState extends State<AddProductPage> {
     );
   }
 
-  Widget _buildDropdownField({
-    required String label,
-    required String? value,
-    required List<DropdownMenuItem<String>> items,
-    required ValueChanged<String?> onChanged,
-    required IconData icon,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.borderLight),
-            borderRadius: BorderRadius.circular(12),
-            color: AppColors.neutral50,
-          ),
-          child: DropdownButtonFormField<String>(
-            value: value,
-            items: items,
-            onChanged: onChanged,
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: AppColors.textTertiary),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            dropdownColor: Colors.white,
-            icon: const Icon(Icons.arrow_drop_down),
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-            ),
-            isExpanded: true,
-            menuMaxHeight: 300,
-            selectedItemBuilder: (BuildContext context) {
-              return items.map<Widget>((DropdownMenuItem<String> item) {
-                return Text(
-                  item.value ?? '',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                );
-              }).toList();
-            },
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildSwitchField({
     required String label,
@@ -650,7 +650,7 @@ class _AddProductPageState extends State<AddProductPage> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: AppColors.primary500,
+          activeThumbColor: AppColors.primary500,
         ),
       ],
     );
@@ -664,7 +664,7 @@ class _AddProductPageState extends State<AddProductPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -707,15 +707,21 @@ class _AddProductPageState extends State<AddProductPage> {
         'description': _descriptionController.text.trim(),
         'sku': _skuController.text.trim(),
         'barcode': _barcodeController.text.trim(),
-        'price': double.parse(_priceController.text),
-        'costPrice': _costPriceController.text.isEmpty ? 0 : double.parse(_costPriceController.text),
-        'quantity': int.parse(_quantityController.text),
+        'costPrice': double.parse(_costPriceController.text),
+        'sellingPrice': double.parse(_sellingPriceController.text),
+        'wholesalePrice': double.parse(_wholesalePriceController.text),
+        'stockQuantity': int.parse(_stockQuantityController.text),
         'minStockLevel': _minStockLevelController.text.isEmpty ? 0 : int.parse(_minStockLevelController.text),
-        'category': _selectedCategory.isNotEmpty ? _selectedCategory : _categoryController.text.trim(),
-        'brand': _selectedBrand.isNotEmpty ? _selectedBrand : _brandController.text.trim(),
-        'supplier': _selectedSupplier.isNotEmpty ? _selectedSupplier : _supplierController.text.trim(),
+        'unit': _unitController.text.trim(),
+        'category': _selectedCategory,
+        'brand': _selectedBrand,
+        'model': _modelController.text.trim(),
         'weight': _weightController.text.isNotEmpty ? double.parse(_weightController.text) : null,
-        'dimensions': _dimensionsController.text.trim(),
+        'dimensions': {
+          'length': _lengthController.text.isNotEmpty ? double.parse(_lengthController.text) : null,
+          'width': _widthController.text.isNotEmpty ? double.parse(_widthController.text) : null,
+          'height': _heightController.text.isNotEmpty ? double.parse(_heightController.text) : null,
+        },
         'isActive': _isActive,
       };
 

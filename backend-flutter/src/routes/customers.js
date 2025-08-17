@@ -52,28 +52,40 @@ router.get('/', [
       filter.isActive = req.query.isActive === 'true';
     }
 
-    const customers = await Customer.find(filter)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    // Check if forDropdown parameter is present
+    if (req.query.forDropdown === 'true') {
+      const customers = await Customer.find(filter)
+        .select('_id name email phoneNumber companyName address city state pincode')
+        .sort({ name: 1 });
+      
+      res.json({
+        success: true,
+        data: customers
+      });
+    } else {
+      const customers = await Customer.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
 
-    const total = await Customer.countDocuments(filter);
-    const totalPages = Math.ceil(total / limit);
+      const total = await Customer.countDocuments(filter);
+      const totalPages = Math.ceil(total / limit);
 
-    res.json({
-      success: true,
-      data: {
-        customers,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
+      res.json({
+        success: true,
+        data: {
+          customers,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1
+          }
         }
-      }
-    });
+      });
+    }
   } catch (error) {
     console.error('Get customers error:', error);
     res.status(500).json({
@@ -93,7 +105,7 @@ router.get('/:id', async (req, res) => {
       clientId: req.user.id
     });
 
-    console.log(customer, 'customer');
+
 
     if (!customer) {
       return res.status(404).json({

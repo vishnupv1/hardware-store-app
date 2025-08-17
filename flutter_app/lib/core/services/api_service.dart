@@ -11,7 +11,6 @@ class ApiService {
     } else {
       url = 'http://localhost:3001/api';
     }
-    print('🔗 Base URL: $url');
     return url;
   }
   static const String authTokenKey = 'auth_token';
@@ -36,10 +35,6 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          print('🌐 Making request to: ${options.baseUrl}${options.path}');
-          print('📤 Request data: ${options.data}');
-          print('📤 Request headers: ${options.headers}');
-          
           // Add auth token to requests
           final token = await _getAuthToken();
           if (token != null) {
@@ -48,15 +43,9 @@ class ApiService {
           handler.next(options);
         },
         onResponse: (response, handler) {
-          print('✅ Response received: ${response.statusCode}');
-          print('📥 Response data: ${response.data}');
           handler.next(response);
         },
         onError: (error, handler) {
-          print('❌ Error occurred: ${error.message}');
-          print('❌ Error type: ${error.type}');
-          print('❌ Error response: ${error.response?.data}');
-          
           // Handle common errors
           if (error.response?.statusCode == 401) {
             // Token expired or invalid
@@ -234,13 +223,9 @@ class ApiService {
   // Test network connectivity
   Future<bool> testConnection() async {
     try {
-      print('🔗 Testing connection to: ${baseUrl}');
-      final response = await _dio.get('/auth/me');
-      print('✅ Connection test successful: ${response.statusCode}');
+      await _dio.get('/auth/me');
       return true;
-    } on DioException catch (e) {
-      print('❌ Connection test failed: ${e.message}');
-      print('❌ Error type: ${e.type}');
+    } on DioException {
       return false;
     }
   }
@@ -435,6 +420,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> getProductBrands() async {
     try {
+
       final response = await _dio.get('/products/brands');
       return response.data;
     } on DioException catch (e) {
@@ -447,6 +433,92 @@ class ApiService {
       final response = await _dio.post('/products/brands', data: {
         'name': brandName,
       });
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  // Brand endpoints
+  Future<Map<String, dynamic>> getBrands({
+    int page = 1,
+    int limit = 20,
+    String? search,
+    bool? isActive,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+      
+      if (search != null) queryParams['search'] = search;
+      if (isActive != null) queryParams['isActive'] = isActive;
+
+
+      final response = await _dio.get('/brands', queryParameters: queryParams);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getBrand(String id) async {
+    try {
+      final response = await _dio.get('/brands/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createBrand({
+    required String name,
+    String? description,
+    bool isActive = true,
+  }) async {
+    try {
+      final response = await _dio.post('/brands', data: {
+        'name': name,
+        if (description != null) 'description': description,
+        'isActive': isActive,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateBrand(String id, {
+    String? name,
+    String? description,
+    bool? isActive,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (name != null) data['name'] = name;
+      if (description != null) data['description'] = description;
+      if (isActive != null) data['isActive'] = isActive;
+
+      final response = await _dio.put('/brands/$id', data: data);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteBrand(String id) async {
+    try {
+      final response = await _dio.delete('/brands/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getBrandStats() async {
+    try {
+      final response = await _dio.get('/brands/stats/summary');
       return response.data;
     } on DioException catch (e) {
       return _handleDioError(e);
@@ -551,6 +623,23 @@ class ApiService {
     }
   }
 
+  // Dashboard endpoints
+  Future<Map<String, dynamic>> getDashboardStats({
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (startDate != null) queryParams['startDate'] = startDate;
+      if (endDate != null) queryParams['endDate'] = endDate;
+
+      final response = await _dio.get('/dashboard/stats', queryParameters: queryParams);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
   Future<Map<String, dynamic>> getPendingPayments() async {
     try {
       final response = await _dio.get('/sales/pending-payments');
@@ -563,6 +652,164 @@ class ApiService {
   Future<Map<String, dynamic>> getCustomerSales(String customerId) async {
     try {
       final response = await _dio.get('/sales/customer/$customerId');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  // Category endpoints
+  Future<Map<String, dynamic>> getCategories({
+    int? page,
+    int? limit,
+    String? search,
+    bool? isActive,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (page != null) queryParams['page'] = page;
+      if (limit != null) queryParams['limit'] = limit;
+      if (search != null) queryParams['search'] = search;
+      if (isActive != null) queryParams['isActive'] = isActive;
+
+      final response = await _dio.get('/categories', queryParameters: queryParams);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getCategory(String id) async {
+    try {
+      final response = await _dio.get('/categories/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createCategory(Map<String, dynamic> categoryData) async {
+    try {
+      final response = await _dio.post('/categories', data: categoryData);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCategory(String id, Map<String, dynamic> categoryData) async {
+    try {
+      final response = await _dio.put('/categories/$id', data: categoryData);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteCategory(String id) async {
+    try {
+      final response = await _dio.delete('/categories/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getCategoriesForDropdown() async {
+    try {
+      final response = await _dio.get('/categories', queryParameters: {
+        'forDropdown': 'true',
+      });
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getBrandsForDropdown() async {
+    try {
+      final response = await _dio.get('/brands', queryParameters: {
+        'forDropdown': 'true',
+      });
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  // Supplier endpoints
+  Future<Map<String, dynamic>> getSuppliers({
+    int? page,
+    int? limit,
+    String? search,
+    bool? isActive,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (page != null) queryParams['page'] = page;
+      if (limit != null) queryParams['limit'] = limit;
+      if (search != null) queryParams['search'] = search;
+      if (isActive != null) queryParams['isActive'] = isActive;
+
+      final response = await _dio.get('/suppliers', queryParameters: queryParams);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getSupplier(String id) async {
+    try {
+      final response = await _dio.get('/suppliers/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createSupplier(Map<String, dynamic> supplierData) async {
+    try {
+      final response = await _dio.post('/suppliers', data: supplierData);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateSupplier(String id, Map<String, dynamic> supplierData) async {
+    try {
+      final response = await _dio.put('/suppliers/$id', data: supplierData);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteSupplier(String id) async {
+    try {
+      final response = await _dio.delete('/suppliers/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getSuppliersForDropdown() async {
+    try {
+      final response = await _dio.get('/suppliers', queryParameters: {
+        'forDropdown': 'true',
+      });
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getCustomersForDropdown() async {
+    try {
+      final response = await _dio.get('/customers', queryParameters: {
+        'forDropdown': 'true',
+      });
       return response.data;
     } on DioException catch (e) {
       return _handleDioError(e);

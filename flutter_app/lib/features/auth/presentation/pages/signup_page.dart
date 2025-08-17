@@ -145,7 +145,7 @@ class _SignupPageState extends State<SignupPage> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary500.withOpacity(0.3),
+                color: AppColors.primary500.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),

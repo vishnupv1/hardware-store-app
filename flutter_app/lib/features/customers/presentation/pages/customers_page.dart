@@ -15,7 +15,6 @@ class CustomersPage extends StatefulWidget {
 class _CustomersPageState extends State<CustomersPage> {
   final TextEditingController _searchController = TextEditingController();
   List<Customer> _customers = [];
-  List<Customer> _filteredCustomers = [];
   bool _isLoading = true;
   bool _hasError = false;
   String? _selectedCustomerType;
@@ -74,7 +73,6 @@ class _CustomersPageState extends State<CustomersPage> {
           } else {
             _customers.addAll(customers);
           }
-          _filteredCustomers = _customers;
           _currentPage++;
           _hasMoreData = data['pagination']['hasNext'];
           _isLoading = false;
@@ -148,7 +146,7 @@ class _CustomersPageState extends State<CustomersPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -173,7 +171,7 @@ class _CustomersPageState extends State<CustomersPage> {
                     Text(
                       'Total Customers',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -203,7 +201,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -240,16 +238,6 @@ class _CustomersPageState extends State<CustomersPage> {
 
 
 
-  void _updateFilter(String filterType, String? value) {
-    setState(() {
-      if (filterType == 'type') {
-        _selectedCustomerType = value;
-      } else if (filterType == 'status') {
-        _selectedStatus = value;
-      }
-    });
-    _loadCustomers(refresh: true);
-  }
 
   void _showFilterDialog() {
     showDialog(
@@ -262,7 +250,7 @@ class _CustomersPageState extends State<CustomersPage> {
             children: [
               // Customer type filter
               DropdownButtonFormField<String>(
-                value: _selectedCustomerType,
+                initialValue: _selectedCustomerType,
                 decoration: InputDecoration(
                   labelText: 'Customer Type',
                   border: OutlineInputBorder(),
@@ -294,7 +282,7 @@ class _CustomersPageState extends State<CustomersPage> {
               SizedBox(height: 16),
               // Status filter
               DropdownButtonFormField<String>(
-                value: _selectedStatus,
+                initialValue: _selectedStatus,
                 decoration: InputDecoration(
                   labelText: 'Status',
                   border: OutlineInputBorder(),
@@ -443,7 +431,7 @@ class _CustomersPageState extends State<CustomersPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -501,7 +489,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getCustomerTypeColor(customer.customerType).withOpacity(0.1),
+                            color: _getCustomerTypeColor(customer.customerType).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -517,8 +505,8 @@ class _CustomersPageState extends State<CustomersPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: customer.isActive 
-                                ? AppColors.success500.withOpacity(0.1)
-                                : AppColors.error500.withOpacity(0.1),
+                                ? AppColors.success500.withValues(alpha: 0.1)
+                                : AppColors.error500.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -568,10 +556,10 @@ class _CustomersPageState extends State<CustomersPage> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.error500.withOpacity(0.1),
+                      color: AppColors.error500.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: AppColors.error500.withOpacity(0.3),
+                        color: AppColors.error500.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(

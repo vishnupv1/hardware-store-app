@@ -97,7 +97,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -122,7 +122,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                             Text(
                               'Create new customer',
                               style: theme.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                               ),
                             ),
                           ],
@@ -410,7 +410,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -424,7 +424,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary500.withOpacity(0.1),
+                  color: AppColors.primary500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -532,7 +532,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
             color: AppColors.neutral50,
           ),
           child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             items: items,
             onChanged: onChanged,
             decoration: InputDecoration(
@@ -590,7 +590,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: AppColors.primary500,
+          activeThumbColor: AppColors.primary500,
         ),
       ],
     );
@@ -604,7 +604,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

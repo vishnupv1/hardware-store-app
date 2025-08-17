@@ -73,6 +73,8 @@ router.get('/', [
     }
 
     const products = await Product.find(filter)
+      .populate('category', 'name')
+      .populate('brand', 'name')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -124,19 +126,35 @@ router.get('/categories', async (req, res) => {
 });
 
 // @route   GET /api/products/brands
-// @desc    Get all product brands
+// @desc    Get all product brands (legacy endpoint for backward compatibility)
 // @access  Private
 router.get('/brands', async (req, res) => {
   try {
-    const brands = await Product.distinct('brand', { 
+    // First try to get brands from the new Brand model
+    const Brand = require('../models/Brand');
+    const brands = await Brand.find({ 
       clientId: req.user.id,
-      brand: { $ne: null, $ne: '' }
-    });
+      isActive: true 
+    }).select('name');
     
-    res.json({
-      success: true,
-      data: { brands }
-    });
+    if (brands.length > 0) {
+      const brandNames = brands.map(brand => brand.name);
+      res.json({
+        success: true,
+        data: { brands: brandNames }
+      });
+    } else {
+      // Fallback to old method for backward compatibility
+      const legacyBrands = await Product.distinct('brand', { 
+        clientId: req.user.id,
+        brand: { $ne: null, $ne: '' }
+      });
+      
+      res.json({
+        success: true,
+        data: { brands: legacyBrands }
+      });
+    }
   } catch (error) {
     console.error('Get brands error:', error);
     res.status(500).json({
@@ -147,7 +165,7 @@ router.get('/brands', async (req, res) => {
 });
 
 // @route   POST /api/products/brands
-// @desc    Add a new brand
+// @desc    Add a new brand (legacy endpoint for backward compatibility)
 // @access  Private
 router.post('/brands', [
   body('name')
@@ -167,10 +185,13 @@ router.post('/brands', [
 
     const { name } = req.body;
     
+    // Use the new Brand model
+    const Brand = require('../models/Brand');
+    
     // Check if brand already exists
-    const existingBrand = await Product.findOne({
+    const existingBrand = await Brand.findOne({
       clientId: req.user.id,
-      brand: name
+      name: name
     });
 
     if (existingBrand) {
@@ -180,27 +201,14 @@ router.post('/brands', [
       });
     }
 
-    // Create a temporary product to add the brand to the system
-    const tempProduct = new Product({
-      name: `Temp Product for ${name}`,
-      description: 'Temporary product to add brand',
-      sku: `TEMP-${Date.now()}`,
-      category: 'Temporary',
-      brand: name,
-      sellingPrice: 0.01,
-      costPrice: 0.01,
-      wholesalePrice: 0.01,
-      stockQuantity: 0,
-      minStockLevel: 0,
-      unit: 'pcs',
-      isActive: false,
+    // Create brand using the new model
+    const brand = new Brand({
+      name,
       clientId: req.user.id,
+      createdBy: req.user.id,
     });
 
-    await tempProduct.save();
-
-    // Delete the temporary product immediately
-    await Product.findByIdAndDelete(tempProduct._id);
+    await brand.save();
 
     res.json({
       success: true,
@@ -209,6 +217,15 @@ router.post('/brands', [
     });
   } catch (error) {
     console.error('Add brand error:', error);
+    
+    // Handle duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Brand already exists',
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error',
@@ -224,7 +241,7 @@ router.get('/:id', async (req, res) => {
     const product = await Product.findOne({
       _id: req.params.id,
       clientId: req.user.id
-    });
+    }).populate('category', 'name').populate('brand', 'name');
 
     if (!product) {
       return res.status(404).json({

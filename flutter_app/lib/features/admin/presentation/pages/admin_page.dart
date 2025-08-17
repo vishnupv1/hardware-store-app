@@ -121,6 +121,47 @@ class _AdminPageState extends State<AdminPage> {
             Expanded(
               child: _buildAdminCard(
                 theme,
+                'Brands',
+                Icons.branding_watermark,
+                'Manage product brands',
+                AppColors.info500,
+                () => context.go('/brands'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildAdminCard(
+                theme,
+                'Categories',
+                Icons.category,
+                'Manage product categories',
+                AppColors.warning500,
+                () => context.go('/categories'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildAdminCard(
+                theme,
+                'Suppliers',
+                Icons.local_shipping,
+                'Manage suppliers',
+                AppColors.secondary500,
+                () => context.go('/suppliers'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildAdminCard(
+                theme,
                 'Analytics',
                 Icons.analytics,
                 'View business insights',
@@ -129,6 +170,24 @@ class _AdminPageState extends State<AdminPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Analytics feature coming soon!'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildAdminCard(
+                theme,
+                'Settings',
+                Icons.settings,
+                'Configure system settings',
+                AppColors.neutral500,
+                () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Settings feature coming soon!'),
                       duration: Duration(seconds: 2),
                     ),
                   );
@@ -158,7 +217,7 @@ class _AdminPageState extends State<AdminPage> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -170,7 +229,7 @@ class _AdminPageState extends State<AdminPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -276,7 +335,7 @@ class _AdminPageState extends State<AdminPage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -287,7 +346,7 @@ class _AdminPageState extends State<AdminPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

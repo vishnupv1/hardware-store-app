@@ -57,7 +57,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   
   List<String> _categories = [];
   List<String> _brands = [];
-  List<String> _suppliers = ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Other'];
+  final List<String> _suppliers = ['Supplier 1', 'Supplier 2', 'Supplier 3', 'Other'];
 
   @override
   void initState() {
@@ -127,7 +127,6 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       }
     } catch (e) {
       // Handle error silently
-      print('Error loading categories and brands: $e');
     }
   }
 
@@ -270,7 +269,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary500.withOpacity(0.3),
+                            color: AppColors.primary500.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -281,7 +280,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+                                    color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -306,7 +305,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 Text(
                   'SKU: ${_skuController.text.isNotEmpty ? _skuController.text : 'N/A'}',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                                                color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -597,7 +596,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -611,7 +610,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary500.withOpacity(0.1),
+                  color: AppColors.primary500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -720,35 +719,51 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             borderRadius: BorderRadius.circular(12),
             color: onChanged != null ? AppColors.neutral50 : AppColors.neutral100,
           ),
-          child: DropdownButtonFormField<String>(
-            value: value,
-            items: items,
-            onChanged: onChanged,
-            decoration: InputDecoration(
-              prefixIcon: Icon(icon, color: AppColors.textTertiary),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-            dropdownColor: Colors.white,
-            icon: const Icon(Icons.arrow_drop_down),
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-            ),
-            isExpanded: true,
-            menuMaxHeight: 300,
-            selectedItemBuilder: (BuildContext context) {
-              return items.map<Widget>((DropdownMenuItem<String> item) {
-                return Text(
-                  item.value ?? '',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
+          child: FormField<String>(
+            initialValue: value,
+            builder: (FormFieldState<String> field) {
+              return DropdownButtonHideUnderline(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(icon, color: AppColors.textTertiary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButton<String>(
+                          value: value,
+                          items: items,
+                          onChanged: onChanged != null ? (String? newValue) {
+                            field.didChange(newValue);
+                            onChanged(newValue);
+                          } : null,
+                          dropdownColor: Colors.white,
+                          icon: const Icon(Icons.arrow_drop_down),
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                          ),
+                          isExpanded: true,
+                          menuMaxHeight: 300,
+                          selectedItemBuilder: (BuildContext context) {
+                            return items.map<Widget>((DropdownMenuItem<String> item) {
+                              return Text(
+                                item.value ?? '',
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 16,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                );
-              }).toList();
+                ),
+              );
             },
           ),
         ),
@@ -779,7 +794,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: AppColors.primary500,
+          activeThumbColor: AppColors.primary500,
         ),
       ],
     );
@@ -793,7 +808,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -855,6 +870,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
       final response = await apiService.updateProduct(widget.productId, productData);
 
+      if (!mounted) return;
+
       if (response['success']) {
         if (mounted) {
           setState(() {
@@ -872,7 +889,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         _showErrorSnackBar(response['message'] ?? 'Failed to update product');
       }
     } catch (e) {
-      _showErrorSnackBar('An error occurred while updating product');
+      if (mounted) {
+        _showErrorSnackBar('An error occurred while updating product');
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -906,6 +925,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       try {
         final response = await apiService.deleteProduct(widget.productId);
         
+        if (!mounted) return;
+        
         if (response['success']) {
           if (mounted) {
             context.go('/inventory');
@@ -921,7 +942,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           _showErrorSnackBar(response['message'] ?? 'Failed to delete product');
         }
       } catch (e) {
-        _showErrorSnackBar('An error occurred while deleting product');
+        if (mounted) {
+          _showErrorSnackBar('An error occurred while deleting product');
+        }
       }
     }
   }

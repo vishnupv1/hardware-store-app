@@ -456,7 +456,7 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -470,7 +470,7 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.primary500.withOpacity(0.1),
+                  color: AppColors.primary500.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -585,7 +585,7 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
             color: enabled ? AppColors.neutral50 : AppColors.neutral100,
           ),
           child: DropdownButtonFormField<String>(
-            value: value,
+            initialValue: value,
             items: items,
             onChanged: enabled ? onChanged : null,
             decoration: InputDecoration(
@@ -644,7 +644,7 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
         Switch(
           value: value,
           onChanged: enabled ? onChanged : null,
-          activeColor: AppColors.primary500,
+          activeThumbColor: AppColors.primary500,
         ),
       ],
     );
@@ -658,7 +658,7 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

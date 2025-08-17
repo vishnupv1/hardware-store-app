@@ -58,6 +58,79 @@ POST /auth/client/register
 }
 ```
 
+### Brands
+
+#### Get All Brands
+```
+GET /brands?page=1&limit=20&search=brand&isActive=true
+```
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 20, max: 100)
+- `search` (optional): Search in brand name
+- `isActive` (optional): true/false
+
+#### Get Brand by ID
+```
+GET /brands/:id
+```
+
+#### Create Brand
+```
+POST /brands
+```
+**Body:**
+```json
+{
+  "name": "Brand Name",
+  "description": "Brand description (optional)",
+  "isActive": true
+}
+```
+
+#### Update Brand
+```
+PUT /brands/:id
+```
+**Body:**
+```json
+{
+  "name": "Updated Brand Name",
+  "description": "Updated description",
+  "isActive": false
+}
+```
+
+#### Delete Brand
+```
+DELETE /brands/:id
+```
+
+#### Get Brand Statistics
+```
+GET /brands/stats/summary
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalBrands": 10,
+    "activeBrands": 8,
+    "inactiveBrands": 2,
+    "topBrands": [
+      {
+        "name": "Brand A",
+        "productCount": 15,
+        "isActive": true
+      }
+    ]
+  }
+}
+```
+
 ### Customers
 
 #### Get All Customers
