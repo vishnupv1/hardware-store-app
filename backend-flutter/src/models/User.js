@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin', 'client'],
+    enum: ['user', 'admin', 'vendor'],
     default: 'user'
   },
   isActive: {

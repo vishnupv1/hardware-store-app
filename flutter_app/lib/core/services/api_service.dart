@@ -107,6 +107,23 @@ class ApiService {
     }
   }
   
+  Future<Map<String, dynamic>> loginVendor(String email, String password) async {
+    try {
+      final response = await _dio.post('/auth/vendor/login', data: {
+        'email': email,
+        'password': password,
+      });
+      
+      if (response.data['success']) {
+        await _saveAuthToken(response.data['data']['token']);
+      }
+      
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+  
   Future<Map<String, dynamic>> registerUser({
     required String email,
     required String password,

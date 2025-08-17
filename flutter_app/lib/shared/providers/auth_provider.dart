@@ -113,6 +113,29 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> loginVendor(String email, String password) async {
+    _setLoading(true);
+    _clearError();
+    
+    try {
+      final response = await apiService.loginVendor(email, password);
+      
+      if (response['success']) {
+        _user = User.fromJson(response['data']['user']);
+        _setStatus(AuthStatus.authenticated);
+        return true;
+      } else {
+        _setError(response['message'] ?? 'Login failed');
+        return false;
+      }
+    } catch (e) {
+      _setError('Network error. Please check your connection.');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<bool> registerUser({
     required String email,
     required String password,

@@ -8,6 +8,7 @@ import 'core/constants/app_constants.dart';
 import 'shared/providers/auth_provider.dart';
 import 'shared/providers/theme_provider.dart';
 import 'features/home/presentation/pages/home_page.dart';
+import 'features/auth/presentation/pages/landing_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/profile/presentation/pages/profile_page.dart';
@@ -82,19 +83,19 @@ class MyApp extends StatelessWidget {
 
 // GoRouter configuration
 final _router = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/landing',
   redirect: (context, state) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAuthenticated = authProvider.isAuthenticated;
-    final isLoggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/signup';
+    final isAuthPage = state.matchedLocation == '/login' || state.matchedLocation == '/signup' || state.matchedLocation == '/landing';
 
-    // If not authenticated and not on login/signup page, redirect to login
-    if (!isAuthenticated && !isLoggingIn) {
-      return '/login';
+    // If not authenticated and not on auth pages, redirect to landing
+    if (!isAuthenticated && !isAuthPage) {
+      return '/landing';
     }
 
-    // If authenticated and on login/signup page, redirect to home
-    if (isAuthenticated && isLoggingIn) {
+    // If authenticated and on auth pages, redirect to home
+    if (isAuthenticated && isAuthPage) {
       return '/';
     }
 
@@ -102,6 +103,11 @@ final _router = GoRouter(
     return null;
   },
   routes: [
+    GoRoute(
+      path: '/landing',
+      name: 'landing',
+      builder: (context, state) => const LandingPage(),
+    ),
     GoRoute(
       path: '/login',
       name: 'login',
@@ -402,7 +408,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
                 onPressed: () async {
                   await authProvider.logout();
                   if (context.mounted) {
-                    context.go('/login');
+                    context.go('/landing');
                   }
                 },
               );

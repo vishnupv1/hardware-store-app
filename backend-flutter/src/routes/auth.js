@@ -386,6 +386,91 @@ router.post('/client/login', authLimiter, validateLogin, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/vendor/login
+// @desc    Login vendor
+// @access  Public
+router.post('/vendor/login', authLimiter, validateLogin, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array(),
+      });
+    }
+
+    const { email, password } = req.body;
+
+    // Find user with vendor role and include password for comparison
+    const vendor = await User.findOne({ email, role: 'vendor' }).select('+password');
+
+    if (!vendor) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    // Check if account is locked
+    if (vendor.isLocked) {
+      return res.status(423).json({
+        success: false,
+        message: 'Account is temporarily locked due to multiple failed login attempts',
+      });
+    }
+
+    // Check if vendor is active
+    if (!vendor.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Account is deactivated',
+      });
+    }
+
+    // Verify password
+    const isPasswordValid = await vendor.comparePassword(password);
+    if (!isPasswordValid) {
+      await vendor.incLoginAttempts();
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    // Reset login attempts on successful login
+    await vendor.resetLoginAttempts();
+
+    // Update last login
+    vendor.lastLogin = new Date();
+    await vendor.save();
+
+    // Generate token
+    const token = generateToken({
+      id: vendor._id,
+      email: vendor.email,
+      role: 'vendor',
+    });
+
+    // Remove password from response
+    vendor.password = undefined;
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: vendor,
+        token,
+      },
+    });
+  } catch (error) {
+    console.error('Vendor login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during login',
+    });
+  }
+});
+
 // @route   GET /api/auth/me
 // @desc    Get current user/client
 // @access  Private
@@ -393,7 +478,7 @@ router.get('/me', auth, async (req, res) => {
   try {
     let user;
     
-    if (req.user.role === 'user') {
+    if (req.user.role === 'user' || req.user.role === 'admin' || req.user.role === 'vendor') {
       user = await User.findById(req.user.id);
     } else if (req.user.role === 'client') {
       user = await Client.findById(req.user.id);

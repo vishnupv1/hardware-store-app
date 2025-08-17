@@ -116,6 +116,14 @@ class BreadcrumbService {
           ),
         ];
       
+      case '/landing':
+        return [
+          BreadcrumbItem(
+            label: 'Welcome',
+            icon: Icons.home,
+          ),
+        ];
+      
       default:
         // Handle nested routes or dynamic routes
         if (route.startsWith('/inventory/')) {

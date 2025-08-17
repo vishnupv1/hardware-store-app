@@ -550,7 +550,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   Navigator.of(context).pop();
                   await authProvider.logout();
                   if (context.mounted) {
-                    context.go('/login');
+                    context.go('/landing');
                   }
                 },
                 style: AppButtonStyle.danger,
