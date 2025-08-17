@@ -83,6 +83,18 @@ The server will be available at `http://localhost:3000`
 
 ### Authentication
 
+#### Admin Authentication
+- `POST /api/auth/admin/register` - Register a new admin
+- `POST /api/auth/admin/login` - Login admin
+- `GET /api/auth/me` - Get current admin (protected)
+- `POST /api/auth/logout` - Logout (protected)
+
+#### Employee Authentication
+- `POST /api/auth/employee/register` - Register a new employee
+- `POST /api/auth/employee/login` - Login employee
+- `GET /api/auth/me` - Get current employee (protected)
+- `POST /api/auth/logout` - Logout (protected)
+
 #### User Authentication
 - `POST /api/auth/user/register` - Register a new user
 - `POST /api/auth/user/login` - Login user
@@ -97,9 +109,66 @@ The server will be available at `http://localhost:3000`
 
 ### Request Examples
 
+#### Admin Registration
+```bash
+curl -X POST http://localhost:3001/api'/auth/admin/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@company.com",
+    "password": "SecurePass123!",
+    "firstName": "Admin",
+    "lastName": "User",
+    "adminId": "ADM24001",
+    "department": "IT",
+    "position": "System Administrator",
+    "phoneNumber": "+1234567890",
+    "adminLevel": "admin",
+    "accessLevel": "full_access",
+    "salary": 75000
+  }'
+```
+
+#### Admin Login
+```bash
+curl -X POST http://localhost:3001/api'/auth/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@company.com",
+    "password": "SecurePass123!"
+  }'
+```
+
+#### Employee Registration
+```bash
+curl -X POST http://localhost:3001/api'/auth/employee/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "employee@company.com",
+    "password": "SecurePass123!",
+    "firstName": "John",
+    "lastName": "Doe",
+    "employeeId": "EMP24001",
+    "department": "Sales",
+    "position": "Sales Representative",
+    "phoneNumber": "+1234567890",
+    "role": "employee",
+    "salary": 50000
+  }'
+```
+
+#### Employee Login
+```bash
+curl -X POST http://localhost:3001/api'/auth/employee/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "employee@company.com",
+    "password": "SecurePass123!"
+  }'
+```
+
 #### User Registration
 ```bash
-curl -X POST http://localhost:3000/api/auth/user/register \
+curl -X POST http://localhost:3001/api'/auth/user/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -112,7 +181,7 @@ curl -X POST http://localhost:3000/api/auth/user/register \
 
 #### User Login
 ```bash
-curl -X POST http://localhost:3000/api/auth/user/login \
+curl -X POST http://localhost:3001/api'/auth/user/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -122,7 +191,7 @@ curl -X POST http://localhost:3000/api/auth/user/login \
 
 #### Client Registration
 ```bash
-curl -X POST http://localhost:3000/api/auth/client/register \
+curl -X POST http://localhost:3001/api'/auth/client/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "client@company.com",
@@ -147,8 +216,8 @@ curl -X POST http://localhost:3000/api/auth/client/register \
 
 The Flutter app automatically detects the platform and uses the appropriate base URL:
 
-- **Android Emulator**: `http://10.0.2.2:3000/api`
-- **iOS Simulator**: `http://localhost:3000/api`
+- **Android Emulator**: `http://10.0.2.2:3001/api'`
+- **iOS Simulator**: `http://localhost:3001/api'`
 - **Physical Device**: Update the base URL in `lib/core/services/api_service.dart`
 
 ### Testing the Connection
@@ -169,11 +238,15 @@ src/
 │   └── errorHandler.js # Error handling
 ├── models/             # Database models
 │   ├── User.js         # User model
-│   └── Client.js       # Client model
+│   ├── Client.js       # Client model
+│   ├── Employee.js     # Employee model
+│   └── Admin.js        # Admin model
 ├── routes/             # API routes
 │   ├── auth.js         # Authentication routes
 │   ├── client.js       # Client routes
-│   └── user.js         # User routes
+│   ├── user.js         # User routes
+│   ├── employees.js    # Employee routes
+│   └── admins.js       # Admin routes
 └── server.js           # Main server file
 ```
 

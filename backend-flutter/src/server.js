@@ -10,6 +10,8 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/client');
 const userRoutes = require('./routes/user');
+const employeeRoutes = require('./routes/employees');
+const adminRoutes = require('./routes/admins');
 const customerRoutes = require('./routes/customers');
 const productRoutes = require('./routes/products');
 const saleRoutes = require('./routes/sales');
@@ -41,7 +43,7 @@ app.use(compression());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://your-flutter-app-domain.com'] 
-    : ['http://localhost:3000', 'http://localhost:8080'],
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:8080', 'http://10.0.2.2:3000', 'http://10.0.2.2:3001'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -85,6 +87,8 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/admins', adminRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
@@ -144,12 +148,10 @@ process.on('SIGINT', () => {
 // Start server
 const startServer = async () => {
   await connectDB();
-  
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
     console.log(`📊 Health check: http://localhost:${PORT}/health`);
     console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
-    // Server started successfully
   });
 };
 

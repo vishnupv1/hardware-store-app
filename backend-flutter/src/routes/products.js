@@ -1,13 +1,13 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
-const { auth, authorize } = require('../middleware/auth');
+const { auth, authorize, requireAdmin, requirePermission } = require('../middleware/auth');
 const Product = require('../models/Product');
 
 const router = express.Router();
 
 // Apply auth middleware to all routes
 router.use(auth);
-router.use(authorize('client', 'admin', 'user'));;
+router.use(authorize('client', 'admin', 'user', 'employee'));
 
 // @route   GET /api/products
 // @desc    Get all products with pagination and filters
@@ -34,8 +34,18 @@ router.get('/', [
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    // Build filter object
-    const filter = { clientId: req.user.id };
+    // Build filter object based on user role
+    let filter = {};
+    
+    // For clients, filter by their clientId
+    if (req.user.role === 'client') {
+      filter.clientId = req.user.id;
+    }
+    // For regular users, they can see products associated with their account
+    else if (req.user.role === 'user') {
+      filter.clientId = req.user.id;
+    }
+    // Admins and employees can see all products
     
     if (req.query.search) {
       filter.$or = [
@@ -264,9 +274,9 @@ router.get('/:id', async (req, res) => {
 });
 
 // @route   POST /api/products
-// @desc    Create a new product
-// @access  Private
-router.post('/', [
+// @desc    Create a new product (Admin only)
+// @access  Private - Admin only
+router.post('/', requireAdmin, [
   body('name')
     .trim()
     .isLength({ min: 2, max: 200 })

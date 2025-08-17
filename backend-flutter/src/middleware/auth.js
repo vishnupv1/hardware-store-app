@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Client = require('../models/Client');
+const Admin = require('../models/Admin');
+const Employee = require('../models/Employee');
 
 const auth = async (req, res, next) => {
   try {
@@ -19,8 +21,9 @@ const auth = async (req, res, next) => {
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Check if user/client exists and is active
+    // Check if user/client/admin/employee exists and is active
     let user;
+    
     if (decoded.role === 'user') {
       user = await User.findById(decoded.id).select('-password');
       if (!user || !user.isActive) {
@@ -45,6 +48,38 @@ const auth = async (req, res, next) => {
           message: 'Subscription is not active',
         });
       }
+    } else if (decoded.role === 'admin') {
+      user = await Admin.findById(decoded.id).select('-password');
+      if (!user || !user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token is not valid or admin is inactive',
+        });
+      }
+      
+      // Check if admin is locked
+      if (user.isLocked) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account is temporarily locked due to multiple failed login attempts',
+        });
+      }
+    } else if (decoded.role === 'employee') {
+      user = await Employee.findById(decoded.id).select('-password');
+      if (!user || !user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: 'Token is not valid or employee is inactive',
+        });
+      }
+      
+      // Check if employee is locked
+      if (user.isLocked) {
+        return res.status(401).json({
+          success: false,
+          message: 'Account is temporarily locked due to multiple failed login attempts',
+        });
+      }
     } else {
       return res.status(401).json({
         success: false,
@@ -52,11 +87,17 @@ const auth = async (req, res, next) => {
       });
     }
 
+    console.log('✅ Auth middleware: Authentication successful');
+    console.log('✅ Auth middleware: User role:', decoded.role);
+    console.log('✅ Auth middleware: User ID:', decoded.id);
+    
     req.user = decoded;
     req.userData = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('🚨 Auth middleware error:', error);
+    console.error('🚨 Auth middleware error type:', error.name);
+
     
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
@@ -96,6 +137,10 @@ const optionalAuth = async (req, res, next) => {
       user = await User.findById(decoded.id).select('-password');
     } else if (decoded.role === 'client') {
       user = await Client.findById(decoded.id).select('-password');
+    } else if (decoded.role === 'admin') {
+      user = await Admin.findById(decoded.id).select('-password');
+    } else if (decoded.role === 'employee') {
+      user = await Employee.findById(decoded.id).select('-password');
     }
 
     if (user && user.isActive) {
@@ -131,4 +176,78 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { auth, optionalAuth, authorize };
+// Permission-based authorization middleware
+const requirePermission = (permission) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied, no token provided',
+      });
+    }
+
+    if (!req.userData) {
+      return res.status(401).json({
+        success: false,
+        message: 'User data not found',
+      });
+    }
+
+    // Check if user has the required permission
+    if (!req.userData.hasPermission || !req.userData.hasPermission(permission)) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied, permission '${permission}' required`,
+      });
+    }
+
+    next();
+  };
+};
+
+// Admin-only authorization middleware
+const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Access denied, no token provided',
+    });
+  }
+
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied, admin privileges required',
+    });
+  }
+
+  next();
+};
+
+// Employee or Admin authorization middleware
+const requireEmployeeOrAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Access denied, no token provided',
+    });
+  }
+
+  if (!['employee', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied, employee or admin privileges required',
+    });
+  }
+
+  next();
+};
+
+module.exports = { 
+  auth, 
+  optionalAuth, 
+  authorize, 
+  requirePermission, 
+  requireAdmin, 
+  requireEmployeeOrAdmin 
+};

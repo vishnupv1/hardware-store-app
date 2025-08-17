@@ -9,7 +9,7 @@ const router = express.Router();
 
 // Apply auth middleware to all routes
 router.use(auth);
-router.use(authorize('client', 'admin', 'user'));
+router.use(authorize('client', 'admin', 'user', 'employee'));
 
 // @route   GET /api/dashboard/stats
 // @desc    Get all dashboard statistics in a single call
@@ -19,9 +19,16 @@ router.get('/stats', async (req, res) => {
     const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date(new Date().setDate(new Date().getDate() - 30));
     const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date();
 
+    // Build filter based on user role
+    let clientIdFilter = {};
+    if (req.user.role === 'client' || req.user.role === 'user') {
+      clientIdFilter = { clientId: new mongoose.Types.ObjectId(req.user.id) };
+    }
+    // Admins and employees can see all data (no clientId filter)
+
     // Get customer statistics
     const customerPipeline = [
-      { $match: { clientId:new mongoose.Types.ObjectId(req.user.id) } },
+      { $match: clientIdFilter },
       {
         $group: {
           _id: null,
@@ -39,7 +46,7 @@ router.get('/stats', async (req, res) => {
 
     // Get product statistics
     const productPipeline = [
-      { $match: { clientId: new mongoose.Types.ObjectId(req.user.id) } },
+      { $match: clientIdFilter },
       {
         $group: {
           _id: null,
@@ -57,7 +64,7 @@ router.get('/stats', async (req, res) => {
 
     // Get sales statistics
     const salesPipeline = [
-      { $match: { clientId: new mongoose.Types.ObjectId(req.user.id) } },
+      { $match: clientIdFilter },
       { $match: { saleDate: { $gte: startDate, $lte: endDate } } },
       { $match: { saleStatus: 'completed' } },
       {
@@ -72,9 +79,9 @@ router.get('/stats', async (req, res) => {
     ];
 
     // Execute all aggregations in parallel
-    const customerCount = await Customer.countDocuments({ clientId: new mongoose.Types.ObjectId(req.user.id) });
-    const productCount = await Product.countDocuments({ clientId: new mongoose.Types.ObjectId(req.user.id) });
-    const saleCount = await Sale.countDocuments({ clientId: new mongoose.Types.ObjectId(req.user.id) });
+    const customerCount = await Customer.countDocuments(clientIdFilter);
+    const productCount = await Product.countDocuments(clientIdFilter);
+    const saleCount = await Sale.countDocuments(clientIdFilter);
     
     const [customerStats, productStats, salesStats] = await Promise.all([
       Customer.aggregate(customerPipeline),
@@ -83,19 +90,19 @@ router.get('/stats', async (req, res) => {
     ]);
 
     // Get recent activity (last 5 sales, customers, products)
-    const recentSales = await Sale.find({ clientId: new mongoose.Types.ObjectId(req.user.id) })
+    const recentSales = await Sale.find(clientIdFilter)
       .populate('customerId', 'name')
       .sort({ createdAt: -1 })
       .limit(5)
       .select('invoiceNumber customerName totalAmount saleDate saleStatus');
 
-    const recentCustomers = await Customer.find({ clientId: new mongoose.Types.ObjectId(req.user.id) })
+    const recentCustomers = await Customer.find(clientIdFilter)
       .sort({ createdAt: -1 })
       .limit(5)
       .select('name email phoneNumber customerType createdAt');
 
     const lowStockProducts = await Product.find({
-      clientId: new mongoose.Types.ObjectId(req.user.id),
+      ...clientIdFilter,
       $expr: { $lte: ['$stockQuantity', '$minStockLevel'] }
     })
       .sort({ stockQuantity: 1 })

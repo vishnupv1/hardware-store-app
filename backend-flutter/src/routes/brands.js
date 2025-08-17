@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
-const { auth, authorize } = require('../middleware/auth');
+const { auth, authorize, requireAdmin, requirePermission } = require('../middleware/auth');
 const Brand = require('../models/Brand');
 const Product = require('../models/Product');
 
@@ -8,7 +8,7 @@ const router = express.Router();
 
 // Apply auth middleware to all routes
 router.use(auth);
-router.use(authorize('client', 'admin', 'user'));
+router.use(authorize('client', 'admin', 'user', 'employee'));
 
 // @route   GET /api/brands
 // @desc    Get all brands with pagination and filters
@@ -45,8 +45,18 @@ router.get('/', [
       });
     }
 
-    // Build filter object
-    const filter = { clientId: req.user.id };
+    // Build filter object based on user role
+    let filter = {};
+    
+    // For clients, filter by their clientId
+    if (req.user.role === 'client') {
+      filter.clientId = req.user.id;
+    }
+    // For regular users, they can see brands associated with their account
+    else if (req.user.role === 'user') {
+      filter.clientId = req.user.id;
+    }
+    // Admins and employees can see all brands
     
     if (req.query.search) {
       filter.name = { $regex: req.query.search, $options: 'i' };
@@ -89,9 +99,9 @@ router.get('/', [
 });
 
 // @route   POST /api/brands
-// @desc    Create a new brand
-// @access  Private
-router.post('/', [
+// @desc    Create a new brand (Admin only)
+// @access  Private - Admin only
+router.post('/', requireAdmin, [
   body('name')
     .trim()
     .isLength({ min: 2, max: 100 })

@@ -32,6 +32,7 @@ import 'features/reports/presentation/pages/reports_page.dart';
 import 'features/brands/presentation/pages/brands_page.dart';
 import 'shared/widgets/breadcrumb.dart';
 import 'core/services/breadcrumb_service.dart';
+import 'core/utils/role_based_access.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -254,38 +255,17 @@ class ScaffoldWithNavigation extends StatefulWidget {
 class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
   int _currentIndex = 0;
 
-  final List<NavigationItem> _navigationItems = [
-    NavigationItem(
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home,
-      label: 'Dashboard',
-      route: '/',
-    ),
-    // NavigationItem(
-    //   icon: Icons.inventory_2_outlined,
-    //   activeIcon: Icons.inventory_2,
-    //   label: 'Inventory',
-    //   route: '/inventory',
-    // ),
-    NavigationItem(
-      icon: Icons.analytics_outlined,
-      activeIcon: Icons.analytics,
-      label: 'Reports',
-      route: '/reports',
-    ),
-    NavigationItem(
-      icon: Icons.admin_panel_settings_outlined,
-      activeIcon: Icons.admin_panel_settings,
-      label: 'Admin',
-      route: '/admin',
-    ),
-    NavigationItem(
-      icon: Icons.settings_outlined,
-      activeIcon: Icons.settings,
-      label: 'Settings',
-      route: '/settings',
-    ),
-  ];
+  List<NavigationItem> get _navigationItems {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final availableItems = RoleBasedAccess.getAvailableNavigationItems(authProvider);
+    
+    return availableItems.map((item) => NavigationItem(
+      icon: item['icon'],
+      activeIcon: item['activeIcon'],
+      label: item['label'],
+      route: item['route'],
+    )).toList();
+  }
 
   @override
   void initState() {

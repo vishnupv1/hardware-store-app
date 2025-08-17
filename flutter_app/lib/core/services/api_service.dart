@@ -37,6 +37,7 @@ class ApiService {
         onRequest: (options, handler) async {
           // Add auth token to requests
           final token = await _getAuthToken();
+          
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -59,7 +60,8 @@ class ApiService {
   
   Future<String?> _getAuthToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(authTokenKey);
+    final token = prefs.getString(authTokenKey);
+    return token;
   }
   
   Future<void> _saveAuthToken(String token) async {
@@ -72,7 +74,56 @@ class ApiService {
     await prefs.remove(authTokenKey);
   }
   
+  Future<bool> isAuthenticated() async {
+    final token = await _getAuthToken();
+    return token != null;
+  }
+  
+  Future<String?> getCurrentToken() async {
+    final token = await _getAuthToken();
+    return token;
+  }
+  
   // Auth endpoints
+  Future<Map<String, dynamic>> loginAdmin(String email, String password) async {
+    try {
+      final response = await _dio.post('/auth/admin/login', data: {
+        'email': email,
+        'password': password,
+      });
+      
+      if (response.data['success']) {
+        await _saveAuthToken(response.data['data']['token']);
+      }
+      
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Unexpected error: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> loginEmployee(String email, String password) async {
+    try {
+      final response = await _dio.post('/auth/employee/login', data: {
+        'email': email,
+        'password': password,
+      });
+      
+      if (response.data['success']) {
+        await _saveAuthToken(response.data['data']['token']);
+      }
+      
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
       final response = await _dio.post('/auth/user/login', data: {
@@ -109,7 +160,7 @@ class ApiService {
   
   Future<Map<String, dynamic>> loginVendor(String email, String password) async {
     try {
-      final response = await _dio.post('/auth/vendor/login', data: {
+      final response = await _dio.post('/vendor/login', data: {
         'email': email,
         'password': password,
       });
@@ -205,6 +256,25 @@ class ApiService {
       return _handleDioError(e);
     }
   }
+
+  Future<Map<String, dynamic>> updateEmployeeProfile({
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+    String? avatar,
+  }) async {
+    try {
+      final response = await _dio.put('/employees/profile', data: {
+        if (firstName != null) 'firstName': firstName,
+        if (lastName != null) 'lastName': lastName,
+        if (phoneNumber != null) 'phoneNumber': phoneNumber,
+        if (avatar != null) 'avatar': avatar,
+      });
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
   
   Future<Map<String, dynamic>> logout() async {
     try {
@@ -216,23 +286,44 @@ class ApiService {
     }
   }
   
-  Future<bool> isAuthenticated() async {
-    final token = await _getAuthToken();
-    return token != null;
-  }
-  
   Map<String, dynamic> _handleDioError(DioException error) {
     if (error.response != null) {
+      // Try to extract the actual error message from the response
+      String errorMessage = 'An error occurred';
+      
+      if (error.response?.data is Map<String, dynamic>) {
+        final responseData = error.response!.data as Map<String, dynamic>;
+        
+        // Try different possible error message fields
+        if (responseData['error'] != null) {
+          errorMessage = responseData['error'].toString();
+        } else if (responseData['message'] != null) {
+          errorMessage = responseData['message'].toString();
+        } else if (responseData['msg'] != null) {
+          errorMessage = responseData['msg'].toString();
+        } else if (responseData['detail'] != null) {
+          errorMessage = responseData['detail'].toString();
+        }
+      } else if (error.response?.data is String) {
+        errorMessage = error.response!.data.toString();
+      }
+      
       return {
         'success': false,
-        'message': error.response?.data['message'] ?? 'An error occurred',
+        'message': errorMessage,
         'statusCode': error.response?.statusCode,
+        'errorType': 'response_error',
+        'errorDetails': error.message,
+        'responseData': error.response?.data,
       };
     } else {
       return {
         'success': false,
         'message': 'Network error. Please check your connection.',
         'statusCode': 0,
+        'errorType': 'network_error',
+        'errorDetails': error.message,
+        'errorCode': error.type.toString(),
       };
     }
   }
@@ -240,9 +331,9 @@ class ApiService {
   // Test network connectivity
   Future<bool> testConnection() async {
     try {
-      await _dio.get('/auth/me');
+      final response = await _dio.get('/health');
       return true;
-    } on DioException {
+    } on DioException catch (e) {
       return false;
     }
   }
@@ -827,6 +918,224 @@ class ApiService {
       final response = await _dio.get('/customers', queryParameters: {
         'forDropdown': 'true',
       });
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  // Employee endpoints
+  Future<Map<String, dynamic>> getEmployees({
+    int page = 1,
+    int limit = 20,
+    String? search,
+    String? department,
+    String? role,
+    bool? isActive,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+      
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (department != null) queryParams['department'] = department;
+      if (role != null) queryParams['role'] = role;
+      if (isActive != null) queryParams['isActive'] = isActive;
+
+      final response = await _dio.get('/employees', queryParameters: queryParams);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getEmployee(String id) async {
+    try {
+      final response = await _dio.get('/employees/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createEmployee(Map<String, dynamic> employeeData) async {
+    try {
+      final response = await _dio.post('/employees', data: employeeData);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateEmployee(String id, Map<String, dynamic> employeeData) async {
+    try {
+      final response = await _dio.put('/employees/$id', data: employeeData);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteEmployee(String id) async {
+    try {
+      final response = await _dio.delete('/employees/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getEmployeeStats() async {
+    try {
+      final response = await _dio.get('/employees/stats/summary');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> registerEmployee({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    required String employeeId,
+    required String department,
+    required String position,
+    String? phoneNumber,
+    String? role,
+    double? salary,
+  }) async {
+    try {
+      final response = await _dio.post('/auth/employee/register', data: {
+        'email': email,
+        'password': password,
+        'firstName': firstName,
+        'lastName': lastName,
+        'employeeId': employeeId,
+        'department': department,
+        'position': position,
+        if (phoneNumber != null) 'phoneNumber': phoneNumber,
+        if (role != null) 'role': role,
+        if (salary != null) 'salary': salary,
+      });
+      
+      if (response.data['success']) {
+        await _saveAuthToken(response.data['data']['token']);
+      }
+      
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  // Admin endpoints
+  Future<Map<String, dynamic>> getAdmins({
+    int page = 1,
+    int limit = 20,
+    String? search,
+    String? department,
+    String? adminLevel,
+    bool? isActive,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+      
+      if (search != null && search.isNotEmpty) queryParams['search'] = search;
+      if (department != null) queryParams['department'] = department;
+      if (adminLevel != null) queryParams['adminLevel'] = adminLevel;
+      if (isActive != null) queryParams['isActive'] = isActive;
+
+      final response = await _dio.get('/admins', queryParameters: queryParams);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getAdmin(String id) async {
+    try {
+      final response = await _dio.get('/admins/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> createAdmin(Map<String, dynamic> adminData) async {
+    try {
+      final response = await _dio.post('/admins', data: adminData);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateAdmin(String id, Map<String, dynamic> adminData) async {
+    try {
+      final response = await _dio.put('/admins/$id', data: adminData);
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteAdmin(String id) async {
+    try {
+      final response = await _dio.delete('/admins/$id');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getAdminStats() async {
+    try {
+      final response = await _dio.get('/admins/stats/summary');
+      return response.data;
+    } on DioException catch (e) {
+      return _handleDioError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> registerAdmin({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+    required String adminId,
+    required String department,
+    required String position,
+    String? phoneNumber,
+    String? adminLevel,
+    String? accessLevel,
+    double? salary,
+  }) async {
+    try {
+      final response = await _dio.post('/auth/admin/register', data: {
+        'email': email,
+        'password': password,
+        'firstName': firstName,
+        'lastName': lastName,
+        'adminId': adminId,
+        'department': department,
+        'position': position,
+        if (phoneNumber != null) 'phoneNumber': phoneNumber,
+        if (adminLevel != null) 'adminLevel': adminLevel,
+        if (accessLevel != null) 'accessLevel': accessLevel,
+        if (salary != null) 'salary': salary,
+      });
+      
+      if (response.data['success']) {
+        await _saveAuthToken(response.data['data']['token']);
+      }
+      
       return response.data;
     } on DioException catch (e) {
       return _handleDioError(e);

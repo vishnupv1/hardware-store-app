@@ -33,8 +33,6 @@ class LandingPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const SizedBox(height: 20),
-                        _buildHeader(theme),
                         const SizedBox(height: 40),
                         _buildUserTypeCards(context, theme),
                         const SizedBox(height: 32),
@@ -146,82 +144,6 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(ThemeData theme) {
-    return Column(
-      children: [
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.3),
-                Colors.white.withValues(alpha: 0.1),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-              ),
-            ],
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: AppColors.primaryGradient,
-            ),
-            child: const Icon(
-              Icons.storefront,
-              color: Colors.white,
-              size: 60,
-            ),
-          ),
-        ),
-        const SizedBox(height: 32),
-        Text(
-          'Welcome to Hardware Store',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 32,
-            color: Colors.white,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                offset: const Offset(0, 2),
-                blurRadius: 4,
-              ),
-            ],
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Choose your role to continue',
-          style: theme.textTheme.bodyLarge?.copyWith(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 18,
-            shadows: [
-              Shadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                offset: const Offset(0, 1),
-                blurRadius: 2,
-              ),
-            ],
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
 
   Widget _buildUserTypeCards(BuildContext context, ThemeData theme) {
     return Column(

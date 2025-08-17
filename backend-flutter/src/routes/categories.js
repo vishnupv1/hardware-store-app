@@ -1,13 +1,13 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { auth, authorize } = require('../middleware/auth');
+const { auth, authorize, requireAdmin, requirePermission } = require('../middleware/auth');
 const Category = require('../models/Category');
 
 const router = express.Router();
 
 // Apply auth middleware to all routes
 router.use(auth);
-router.use(authorize('admin', 'user', 'client'));
+router.use(authorize('admin', 'user', 'client', 'employee'));
 
 // @route   GET /api/categories
 // @desc    Get all categories with pagination and filters
@@ -80,9 +80,9 @@ router.get('/', async (req, res) => {
 });
 
 // @route   POST /api/categories
-// @desc    Create a new category
-// @access  Private
-router.post('/', [
+// @desc    Create a new category (Admin only)
+// @access  Private - Admin only
+router.post('/', requireAdmin, [
   body('name')
     .trim()
     .isLength({ min: 2, max: 100 })

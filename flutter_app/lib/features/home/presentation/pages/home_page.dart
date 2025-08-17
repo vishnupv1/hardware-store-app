@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../core/utils/role_based_access.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -905,51 +906,52 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildSpeedDial() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Speed dial items
-        if (_isSpeedDialOpen) ...[
-          _buildSpeedDialItem(
-            icon: Icons.point_of_sale,
-            label: 'Sale',
-            color: AppColors.success500,
-            onTap: () => context.go('/sales/add'),
-          ),
-          const SizedBox(height: 16),
-          _buildSpeedDialItem(
-            icon: Icons.person_add,
-            label: 'Customer',
-            color: AppColors.primary500,
-            onTap: () => context.go('/customers/add'),
-          ),
-          const SizedBox(height: 16),
-          _buildSpeedDialItem(
-            icon: Icons.inventory,
-            label: 'Product',
-            color: AppColors.warning500,
-            onTap: () => context.go('/inventory/add'),
-          ),
-          const SizedBox(height: 16),
-        ],
-        // Main FAB button
-        FloatingActionButton(
-          onPressed: () {
-            setState(() {
-              _isSpeedDialOpen = !_isSpeedDialOpen;
-            });
-          },
-          backgroundColor: AppColors.primary500,
-          child: AnimatedRotation(
-            turns: _isSpeedDialOpen ? 0.125 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: Icon(
-              _isSpeedDialOpen ? Icons.close : Icons.add,
-              color: Colors.white,
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final availableItems = RoleBasedAccess.getAvailableSpeedDialItems(authProvider);
+        
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Speed dial items
+            if (_isSpeedDialOpen) ...[
+              ...availableItems.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                
+                return Column(
+                  children: [
+                    _buildSpeedDialItem(
+                      icon: item['icon'],
+                      label: item['label'],
+                      color: item['color'],
+                      onTap: () => context.go(item['route']),
+                    ),
+                    if (index < availableItems.length - 1) const SizedBox(height: 16),
+                  ],
+                );
+              }).toList(),
+            ],
+            // Main FAB button
+            FloatingActionButton(
+              onPressed: () {
+                setState(() {
+                  _isSpeedDialOpen = !_isSpeedDialOpen;
+                });
+              },
+              backgroundColor: AppColors.primary500,
+              child: AnimatedRotation(
+                turns: _isSpeedDialOpen ? 0.125 : 0.0,
+                duration: const Duration(milliseconds: 300),
+                child: Icon(
+                  _isSpeedDialOpen ? Icons.close : Icons.add,
+                  color: Colors.white,
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

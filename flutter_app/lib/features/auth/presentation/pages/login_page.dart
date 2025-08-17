@@ -7,6 +7,7 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../../shared/providers/auth_provider.dart';
 import '../../../../shared/widgets/breadcrumb.dart';
+import '../../../../core/services/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -35,6 +36,10 @@ class _LoginPageState extends State<LoginPage> {
         });
       }
     });
+    
+    // For testing purposes, pre-fill admin credentials
+    _emailController.text = 'admin@email.com';
+    _passwordController.text = 'Vis@123456';
   }
 
   List<BreadcrumbItem> _getBreadcrumbs() {
@@ -83,13 +88,13 @@ class _LoginPageState extends State<LoginPage> {
     
     switch (_selectedLoginType) {
       case 'admin':
-        success = await authProvider.loginUser(
+        success = await authProvider.loginAdmin(
           _emailController.text.trim(),
           _passwordController.text,
         );
         break;
       case 'employee':
-        success = await authProvider.loginUser(
+        success = await authProvider.loginEmployee(
           _emailController.text.trim(),
           _passwordController.text,
         );
@@ -106,17 +111,111 @@ class _LoginPageState extends State<LoginPage> {
           _passwordController.text,
         );
     }
-
+    
     if (success && mounted) {
       context.go('/');
     } else if (mounted) {
-      // Show error message
+      // Show error message with more details
+      final errorMessage = authProvider.errorMessage ?? 'Login failed';
+      
+      // Check if it's a rate limiting error
+      final isRateLimitError = errorMessage.toLowerCase().contains('too many') || 
+                              errorMessage.toLowerCase().contains('rate limit') ||
+                              errorMessage.toLowerCase().contains('authentication attempts');
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authProvider.errorMessage ?? 'Login failed'),
-          backgroundColor: Colors.red,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isRateLimitError ? 'Rate Limit Exceeded' : 'Login Failed',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(errorMessage),
+              if (isRateLimitError) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Please wait a few minutes before trying again.',
+                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                ),
+              ],
+            ],
+          ),
+          backgroundColor: isRateLimitError ? Colors.orange : Colors.red,
+          duration: Duration(seconds: isRateLimitError ? 8 : 5),
+          action: SnackBarAction(
+            label: 'Details',
+            textColor: Colors.white,
+            onPressed: () {
+              // Show detailed error dialog
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(isRateLimitError ? 'Rate Limit Error' : 'Login Error Details'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(errorMessage),
+                      if (isRateLimitError) ...[
+                        const SizedBox(height: 16),
+                        const Text(
+                          'This happens when there are too many failed login attempts. To resolve this:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('• Wait 5-10 minutes before trying again'),
+                        const Text('• Make sure you\'re using the correct credentials'),
+                        const Text('• Check your internet connection'),
+                        const Text('• Contact support if the issue persists'),
+                      ],
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       );
+    }
+  }
+
+  void _testConnection() async {
+    try {
+      final isConnected = await apiService.testConnection();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isConnected 
+                ? '✅ Connection successful!' 
+                : '❌ Connection failed. Check console for details.'
+            ),
+            backgroundColor: isConnected ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Connection test failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
   }
 
@@ -204,6 +303,8 @@ class _LoginPageState extends State<LoginPage> {
                           _buildRememberMeSection(theme),
                           const SizedBox(height: 24),
                           _buildLoginButton(),
+                          const SizedBox(height: 12),
+                          _buildTestConnectionButton(),
                           const SizedBox(height: 24),
                           _buildDivider(theme),
                           const SizedBox(height: 24),
@@ -477,6 +578,16 @@ class _LoginPageState extends State<LoginPage> {
           icon: Icons.login,
         );
       },
+    );
+  }
+
+  Widget _buildTestConnectionButton() {
+    return AppButton(
+      text: 'Test Connection',
+      onPressed: _testConnection,
+      style: AppButtonStyle.secondary,
+      size: AppButtonSize.medium,
+      icon: Icons.wifi,
     );
   }
 

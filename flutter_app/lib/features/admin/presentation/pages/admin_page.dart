@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/providers/auth_provider.dart';
+import '../../../../core/utils/role_based_access.dart';
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -12,39 +15,97 @@ class AdminPage extends StatefulWidget {
 class _AdminPageState extends State<AdminPage> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.neutral900 : AppColors.background,
-      appBar: AppBar(
-        title: Text('Admin Panel'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 120.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(theme),
-                  const SizedBox(height: 24),
-                  _buildAdminCards(theme),
-                  const SizedBox(height: 24),
-                  _buildQuickStats(theme),
-                ],
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        // Check if user has admin access
+        if (!RoleBasedAccess.canAccessAdminPanel(authProvider)) {
+          return Scaffold(
+            backgroundColor: Theme.of(context).brightness == Brightness.dark 
+                ? AppColors.neutral900 
+                : AppColors.background,
+            appBar: AppBar(
+              title: const Text('Access Denied'),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.go('/'),
               ),
             ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.lock,
+                      size: 80,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Access Denied',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'You do not have permission to access the Admin Panel. Only administrators can view this page.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: () => context.go('/'),
+                      child: const Text('Go to Dashboard'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+
+        return Scaffold(
+          backgroundColor: isDark ? AppColors.neutral900 : AppColors.background,
+          appBar: AppBar(
+            title: const Text('Admin Panel'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => context.go('/'),
+            ),
           ),
-        ],
-      ),
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 120.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(theme),
+                      const SizedBox(height: 24),
+                      _buildAdminCards(theme),
+                      const SizedBox(height: 24),
+                      _buildQuickStats(theme),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -162,6 +223,17 @@ class _AdminPageState extends State<AdminPage> {
             Expanded(
               child: _buildAdminCard(
                 theme,
+                'Employees',
+                Icons.people_outline,
+                'Manage employees',
+                AppColors.info500,
+                () => context.go('/employees'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildAdminCard(
+                theme,
                 'Analytics',
                 Icons.analytics,
                 'View business insights',
@@ -176,7 +248,11 @@ class _AdminPageState extends State<AdminPage> {
                 },
               ),
             ),
-            const SizedBox(width: 12),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
             Expanded(
               child: _buildAdminCard(
                 theme,
@@ -193,6 +269,10 @@ class _AdminPageState extends State<AdminPage> {
                   );
                 },
               ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(), // Empty container for spacing
             ),
           ],
         ),
