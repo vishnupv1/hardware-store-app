@@ -86,11 +86,6 @@ const auth = async (req, res, next) => {
         message: 'Invalid token role',
       });
     }
-
-    console.log('✅ Auth middleware: Authentication successful');
-    console.log('✅ Auth middleware: User role:', decoded.role);
-    console.log('✅ Auth middleware: User ID:', decoded.id);
-    
     req.user = decoded;
     req.userData = user;
     next();
