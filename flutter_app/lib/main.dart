@@ -262,10 +262,10 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
     //   route: '/inventory',
     // ),
     NavigationItem(
-      icon: Icons.people_outlined,
-      activeIcon: Icons.people,
-      label: 'Customers',
-      route: '/customers',
+      icon: Icons.analytics_outlined,
+      activeIcon: Icons.analytics,
+      label: 'Reports',
+      route: '/reports',
     ),
     NavigationItem(
       icon: Icons.admin_panel_settings_outlined,
@@ -274,10 +274,10 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
       route: '/admin',
     ),
     NavigationItem(
-      icon: Icons.analytics_outlined,
-      activeIcon: Icons.analytics,
-      label: 'Reports',
-      route: '/reports',
+      icon: Icons.settings_outlined,
+      activeIcon: Icons.settings,
+      label: 'Settings',
+      route: '/settings',
     ),
   ];
 
@@ -289,9 +289,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
       final location = GoRouterState.of(context).uri.path;
       // Handle nested routes by finding the parent route
       String parentRoute = location;
-      if (location.startsWith('/customers/')) {
-        parentRoute = '/customers';
-      } else if (location.startsWith('/sales/')) {
+      if (location.startsWith('/sales/')) {
         parentRoute = '/sales';
       }
       
@@ -310,7 +308,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
     final location = GoRouterState.of(context).uri.path;
     
     // Don't show AppBar for pages with custom headers
-    if (location == '/customers' || location == '/inventory' || location == '/customers/add' || location == '/inventory/add' || location == '/brands' || location == '/categories' || location == '/suppliers' || location == '/sales' || location.startsWith('/sales/')) {
+    if (location == '/inventory' || location == '/inventory/add' || location == '/brands' || location == '/categories' || location == '/suppliers' || location == '/sales' || location.startsWith('/sales/')) {
       return null;
     }
     
@@ -362,7 +360,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
               },
             )
           : null, // Other pages will handle their own leading widget
-      title: location == '/customers' || location == '/inventory'
+      title: location == '/inventory'
           ? null // Don't show title for pages with custom headers
           : Text(
               _getPageTitle(location),
@@ -417,11 +415,6 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
   }
 
   String _getPageTitle(String location) {
-    // Handle dynamic customer details route
-    if (location.startsWith('/customers/') && location != '/customers/add') {
-      return 'Customer Details';
-    }
-    
     switch (location) {
       case '/':
         return 'Dashboard';
@@ -455,9 +448,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
     final location = GoRouterState.of(context).uri.path;
     // Handle nested routes by finding the parent route
     String parentRoute = location;
-    if (location.startsWith('/customers/')) {
-      parentRoute = '/customers';
-    } else if (location.startsWith('/sales/')) {
+    if (location.startsWith('/sales/')) {
       parentRoute = '/sales';
     }
     
@@ -476,7 +467,7 @@ class _ScaffoldWithNavigationState extends State<ScaffoldWithNavigation> {
       body: Column(
         children: [
           // Breadcrumb navigation (hide for pages with custom headers)
-          if (location != '/customers' && location != '/inventory' && location != '/customers/add' && location != '/inventory/add' && location != '/brands' && location != '/categories' && location != '/suppliers' && location != '/sales' && !location.startsWith('/sales/'))
+          if (location != '/inventory' && location != '/inventory/add' && location != '/brands' && location != '/categories' && location != '/suppliers' && location != '/sales' && !location.startsWith('/sales/'))
             Breadcrumb(
               items: breadcrumbs,
               showHome: location != '/',

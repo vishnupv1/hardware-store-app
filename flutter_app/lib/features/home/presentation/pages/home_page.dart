@@ -208,7 +208,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                         Text(
-                          user?.role == 'client' ? 'Client' : 'User',
+                          user?.role == 'client' ? 'Business Owner' : 'User',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: Colors.white.withValues(alpha: 0.8),
                           ),

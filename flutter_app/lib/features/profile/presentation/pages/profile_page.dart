@@ -29,8 +29,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   _buildProfileHeader(theme),
                   const SizedBox(height: 24),
-                  _buildProfileStats(theme),
-                  const SizedBox(height: 24),
                   _buildProfileActions(context, theme),
                   const SizedBox(height: 24),
                   _buildProfileDetails(theme),
@@ -244,61 +242,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildProfileStats(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(child: _buildStatItem(theme, 'Projects', '12')),
-          Container(
-            width: 1,
-            height: 40,
-            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-          ),
-          Expanded(child: _buildStatItem(theme, 'Tasks', '34')),
-          Container(
-            width: 1,
-            height: 40,
-            color: theme.colorScheme.outline.withValues(alpha: 0.2),
-          ),
-          Expanded(child: _buildStatItem(theme, 'Hours', '156')),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(ThemeData theme, String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary500,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildProfileActions(BuildContext context, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -320,7 +263,6 @@ class _ProfilePageState extends State<ProfilePage> {
           text: 'Share Profile',
           icon: Icons.share,
           onPressed: () {
-            // Handle share profile
           },
           style: AppButtonStyle.secondary,
           size: AppButtonSize.large,
